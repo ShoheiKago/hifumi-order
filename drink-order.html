@@ -289,15 +289,11 @@ async function loadRooms() {
     buildRoomSelect();
     setbadge('ok', '接続済み ✓');
   } catch {
-    // GAS未設定時はサンプルで動作
-    GUESTS = {
-      '101': { name: '山田　太郎 様', allergy: 'エビアレルギー 1名' },
-      '203': { name: '渡辺　健二 様', allergy: '' },
-      '301': { name: '高橋　由美 様', allergy: '乳製品アレルギー' },
-      '401': { name: '中村　大輔 様', allergy: '' },
-    };
-    buildRoomSelect();
-    setbadge('demo', 'サンプル表示');
+    // GAS未接続時は空のまま表示
+    const sel = document.getElementById('fRoom');
+    sel.innerHTML = '<option value="">— 部屋を選択してください —</option>';
+    sel.disabled = false;
+    setbadge('demo', '未接続');
   }
 }
 
