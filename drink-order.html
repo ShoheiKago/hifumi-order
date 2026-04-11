@@ -345,6 +345,18 @@ const MENU = [
 let cart = {};
 let currentRoom = '';
 
+// チェックイン中の部屋のみドロップダウンに追加
+(function buildRoomSelect() {
+  const sel = document.getElementById('fRoom');
+  const rooms = Object.keys(GUESTS).sort((a, b) => Number(a) - Number(b));
+  rooms.forEach(room => {
+    const opt = document.createElement('option');
+    opt.value = room;
+    opt.textContent = room + '号室　' + GUESTS[room].name;
+    sel.appendChild(opt);
+  });
+})();
+
 function onRoomChange() {
   currentRoom = document.getElementById('fRoom').value;
   const guest = GUESTS[currentRoom];
@@ -356,11 +368,6 @@ function onRoomChange() {
     nameTxt.textContent = guest.name;
     allergyDiv.style.color = guest.allergy ? '#8b1a1a' : '#bbb';
     allergyDiv.textContent = guest.allergy || '備考なし';
-  } else if (currentRoom) {
-    nameTxt.className = 'name-txt';
-    nameTxt.textContent = '（本日チェックインなし）';
-    allergyDiv.style.color = '#bbb';
-    allergyDiv.textContent = '備考なし';
   } else {
     nameTxt.className = 'name-empty';
     nameTxt.textContent = '部屋を選択するとお名前が表示されます';
