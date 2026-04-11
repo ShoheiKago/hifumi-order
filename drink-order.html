@@ -2,548 +2,466 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>飲料注文 — ひふみ旅館</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ひふみ旅館 飲料注文</title>
 <style>
-
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600&family=Noto+Sans+JP:wght@300;400;500&display=swap');
 
   :root {
-    --ink: #1a1410;
-    --washi: #f5f0e8;
-    --matcha: #4a6741;
-    --matcha-light: #6a8f60;
-    --gold: #b8922a;
-    --gold-light: #d4a940;
-    --ash: #8a8278;
-    --border: #d4c9b0;
-    --red: #8b2e2e;
+    --bg: #f0ece4;
+    --card: #faf8f4;
+    --hdr: #1a1a1a;
+    --gold: #b8963e;
+    --txt: #2c2c2c;
+    --sub: #888;
+    --bdr: #ddd8ce;
+    --green: #3a5a40;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
-    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
-    background: var(--washi);
-    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--txt);
+    max-width: 430px;
+    margin: 0 auto;
     min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse at 80% 0%, rgba(184,146,42,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse at 0% 100%, rgba(74,103,65,0.06) 0%, transparent 50%);
   }
 
+  /* ── HEADER ── */
   header {
-    background: var(--ink);
-    color: var(--washi);
-    padding: 16px 24px;
+    background: var(--hdr);
+    padding: 14px 18px 12px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid var(--gold);
+    align-items: flex-start;
+    position: sticky; top: 0; z-index: 50;
   }
-  .header-title { font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-size: 18px; font-weight: 600; letter-spacing: 0.08em; }
-  .header-sub { font-size: 11px; color: var(--gold-light); letter-spacing: 0.15em; margin-top: 2px; }
-  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-  .header-time { font-size: 12px; color: var(--ash); }
-  .api-status { font-size: 10px; padding: 2px 8px; border-radius: 100px; letter-spacing: 0.05em; }
-  .api-status.ok { background: var(--matcha); color: #fff; }
-  .api-status.err { background: var(--red); color: #fff; }
-  .api-status.loading { background: var(--gold); color: #fff; }
-
-  main { max-width: 680px; margin: 0 auto; padding: 24px 16px 80px; }
-
-  .token-box { background: #fff; border: 1.5px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 20px; }
-  .token-row { display: flex; gap: 8px; align-items: center; }
-  .token-input {
-    flex: 1; padding: 10px 12px;
-    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 13px;
-    border: 1.5px solid var(--border); border-radius: 4px;
-    color: var(--ink); background: var(--washi);
+  header h1 { font-family: 'Noto Serif JP'; font-size: 18px; color: #fff; letter-spacing:.04em; }
+  header p  { font-size: 10px; color: var(--gold); letter-spacing:.14em; margin-top:2px; }
+  .hdr-right { text-align:right; }
+  .clock { font-size: 13px; color: #ccc; }
+  .conn-pill {
+    display:inline-flex; align-items:center; gap:4px;
+    background: var(--green); color:#fff;
+    font-size:11px; padding:3px 9px; border-radius:20px; margin-top:4px;
   }
-  .token-input:focus { outline: none; border-color: var(--matcha); }
+  .conn-pill::before {
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:#7ecf8e; display:inline-block;
+  }
+  .gold-line { height:2px; background: linear-gradient(90deg,var(--gold),transparent); }
+
+  /* ── FORM WRAP ── */
+  .form-wrap { padding: 20px 16px 100px; }
 
   .section-label {
-    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-size: 13px; color: var(--ash);
-    letter-spacing: 0.12em; margin-bottom: 8px;
-    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--sub);
+    margin-bottom: 8px; display: block; letter-spacing:.05em;
   }
-  .section-label::before {
-    content: ''; display: inline-block; width: 3px; height: 14px;
-    background: var(--gold); border-radius: 2px;
+  .section-label::before { content:'｜'; color:var(--gold); margin-right:4px; }
+
+  /* ── ROOM SELECT ── */
+  .room-block { margin-bottom: 14px; }
+  select, input, textarea {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--bdr);
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--txt);
+    outline: none;
+    -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    padding-right: 36px;
   }
 
-  .state-box {
-    background: #fff; border: 1.5px solid var(--border); border-radius: 6px;
-    padding: 24px; text-align: center; font-size: 13px; color: var(--ash);
+  /* ── NAME DISPLAY (below room) ── */
+  .name-display {
+    margin-top: 8px;
+    background: #fff;
+    border: 1.5px solid var(--bdr);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  .state-box.error { border-color: var(--red); color: var(--red); }
-  .spinner {
-    width: 24px; height: 24px; border: 2px solid var(--border);
-    border-top-color: var(--matcha); border-radius: 50%;
-    animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+  .name-display .name-icon {
+    font-size: 13px;
+    color: var(--gold);
+    flex-shrink: 0;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .room-select {
-    width: 100%; padding: 14px 16px;
-    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 16px;
-    color: var(--ink); background: #fff;
-    border: 1.5px solid var(--border); border-radius: 4px;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8278' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 14px center;
-    cursor: pointer; transition: border-color 0.2s;
+  .name-display .name-txt {
+    font-size: 15px;
+    color: var(--txt);
+    font-weight: 500;
   }
-  .room-select:focus { outline: none; border-color: var(--matcha); }
-
-  .remarks-box { background: #fff; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .remarks-existing {
-    padding: 12px 14px; background: #fffdf5; border-bottom: 1px solid var(--border);
-    font-size: 13px; line-height: 1.7; color: var(--ink);
-    min-height: 44px; display: flex; align-items: flex-start; gap: 8px;
+  .name-display .name-empty {
+    font-size: 13px;
+    color: #bbb;
   }
-  .remarks-existing.empty { color: var(--ash); font-style: italic; }
-  .remarks-badge { flex-shrink: 0; font-size: 10px; background: var(--gold); color: #fff; border-radius: 3px; padding: 2px 6px; margin-top: 2px; font-style: normal; }
-  .remarks-badge.alert { background: var(--red); }
-  .remarks-input { width: 100%; padding: 12px 14px; font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 13px; color: var(--ink); background: #fff; border: none; resize: vertical; min-height: 60px; line-height: 1.6; }
-  .remarks-input:focus { outline: none; }
-  .remarks-input::placeholder { color: var(--ash); }
-  .remarks-input-label { font-size: 11px; color: var(--ash); padding: 6px 14px 0; display: block; border-top: 1px solid var(--border); background: #fff; }
 
-  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-  .category-title {
-    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-size: 12px; color: var(--ash);
-    letter-spacing: 0.2em; margin: 20px 0 10px; padding-bottom: 6px;
-    border-bottom: 1px solid var(--border); grid-column: 1 / -1;
+  /* ── NOTES SECTION ── */
+  .notes-block { margin-bottom: 14px; }
+  textarea { resize: none; height: 80px; font-size: 14px; }
+
+  /* GAS送信ボタ */
+  .send-note-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    background: transparent;
+    border: 1.5px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: .03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .18s;
   }
-  .item-card {
-    background: #fff; border: 1.5px solid var(--border); border-radius: 6px;
-    padding: 14px; display: flex; flex-direction: column; gap: 8px;
-    transition: border-color 0.15s, box-shadow 0.15s; position: relative; overflow: hidden;
+  .send-note-btn:active { background: #fdf5e6; }
+  .send-note-btn.sending { opacity:.6; pointer-events:none; }
+
+  /* ── MENU ── */
+  .menu-block { margin-bottom: 14px; }
+  .menu-placeholder {
+    background: #fff;
+    border: 1.5px solid var(--bdr);
+    border-radius: 8px;
+    padding: 28px 16px;
+    text-align: center;
+    color: #bbb;
+    font-size: 13px;
+    line-height: 1.8;
   }
-  .item-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); opacity: 0; transition: opacity 0.2s; }
-  .item-card.has-qty::before { opacity: 1; }
-  .item-card.has-qty { border-color: var(--gold); box-shadow: 0 2px 12px rgba(184,146,42,0.12); }
-  .item-name { font-size: 14px; font-weight: 500; line-height: 1.4; }
-  .item-price { font-size: 12px; color: var(--ash); }
-  .qty-control { display: flex; align-items: center; margin-top: 4px; }
-  .qty-btn { width: 32px; height: 32px; border: 1.5px solid var(--border); background: var(--washi); color: var(--ink); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .qty-btn:first-child { border-radius: 4px 0 0 4px; }
-  .qty-btn:last-child { border-radius: 0 4px 4px 0; }
-  .qty-btn:active { background: var(--border); }
-  .qty-display { flex: 1; height: 32px; border: 1.5px solid var(--border); border-left: none; border-right: none; background: #fff; text-align: center; font-size: 16px; font-weight: 500; display: flex; align-items: center; justify-content: center; min-width: 36px; }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .menu-item {
+    background: #fff;
+    border: 1.5px solid var(--bdr);
+    border-radius: 10px;
+    padding: 12px 10px 10px;
+    cursor: pointer;
+  }
+  .menu-item-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .menu-item-price { font-size: 12px; color: var(--sub); margin-bottom: 8px; }
+  .qty-row { display: flex; align-items: center; justify-content: space-between; }
+  .qty-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%; border: 1.5px solid var(--bdr);
+    background: var(--bg); font-size: 18px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--txt);
+  }
+  .qty-btn:active { background: var(--bdr); }
+  .qty-num { font-size: 15px; font-weight: 500; min-width: 20px; text-align: center; }
 
-  .summary-box { background: var(--ink); color: var(--washi); border-radius: 8px; padding: 20px; margin-top: 28px; }
-  .summary-title { font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-size: 14px; color: var(--gold-light); letter-spacing: 0.1em; margin-bottom: 14px; }
-  .summary-empty { font-size: 13px; color: var(--ash); text-align: center; padding: 12px 0; }
-  .summary-item { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-  .summary-total { display: flex; justify-content: space-between; font-size: 15px; font-weight: 500; padding-top: 12px; margin-top: 4px; color: var(--gold-light); }
+  /* ── ORDER SUMMARY ── */
+  .order-summary {
+    background: var(--hdr);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+  }
+  .order-title { color: var(--gold); font-size: 13px; letter-spacing:.05em; margin-bottom:12px; }
+  .order-empty { color:#666; font-size:13px; text-align:center; padding: 8px 0; }
+  .order-item {
+    display:flex; justify-content:space-between;
+    color:#fff; font-size:13px;
+    padding: 5px 0;
+    border-bottom: 1px solid #333;
+  }
+  .order-item:last-of-type { border-bottom:none; }
+  .order-actions { display:flex; gap:8px; margin-top:14px; }
+  .btn-clear {
+    flex:1; padding:12px;
+    background:transparent; border:1px solid #444;
+    border-radius:8px; color:#888; font-size:14px;
+    font-family:'Noto Sans JP'; cursor:pointer;
+  }
+  .btn-confirm {
+    flex:2; padding:12px;
+    background: var(--gold); border:none;
+    border-radius:8px; color:#fff; font-size:14px;
+    font-family:'Noto Sans JP'; font-weight:500;
+    cursor:pointer;
+  }
+  .btn-confirm:disabled { background:#555; cursor:default; }
 
-  .btn-row { display: flex; gap: 10px; margin-top: 20px; }
-  .btn { flex: 1; padding: 14px; border: none; border-radius: 4px; font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; letter-spacing: 0.05em; transition: opacity 0.15s, transform 0.1s; }
-  .btn:active { transform: scale(0.98); }
-  .btn-clear { background: transparent; border: 1.5px solid rgba(255,255,255,0.2); color: var(--ash); }
-  .btn-order { background: var(--matcha); color: #fff; flex: 2; }
-  .btn-order:disabled { background: #444; color: #666; cursor: not-allowed; }
-  .btn-sm { padding: 8px 16px; border: none; border-radius: 4px; font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; background: var(--matcha); color: #fff; white-space: nowrap; }
-
-  .sending-overlay { display: none; position: fixed; inset: 0; background: rgba(26,20,16,0.7); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: #fff; font-size: 15px; }
-  .sending-overlay.show { display: flex; }
-
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); padding: 14px 28px; border-radius: 100px; font-size: 14px; letter-spacing: 0.05em; transition: transform 0.3s ease; z-index: 100; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { background: var(--matcha); color: #fff; }
-  .toast.error { background: var(--red); color: #fff; }
-
-  .history-section { margin-top: 32px; }
-  .history-item { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-top: 8px; font-size: 13px; }
-  .history-meta { display: flex; justify-content: space-between; color: var(--ash); font-size: 11px; margin-bottom: 6px; }
-  .history-room { font-weight: 500; color: var(--matcha); }
-  .history-badge { font-size: 10px; border-radius: 3px; padding: 1px 6px; }
-  .history-badge.ok { background: var(--matcha); color: #fff; }
-  .history-badge.fail { background: var(--red); color: #fff; }
-
-  .section-gap { margin-top: 24px; }
+  /* ── TOAST ── */
+  .toast {
+    position:fixed; bottom:80px; left:50%;
+    transform:translateX(-50%) translateY(16px);
+    background:#2c2c2c; color:#fff;
+    padding:9px 18px; border-radius:20px;
+    font-size:13px; opacity:0; transition:all .25s;
+    pointer-events:none; white-space:nowrap; z-index:200;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <div class="header-title">ひふみ旅館　飲料注文</div>
-    <div class="header-sub">STAFF ORDER SYSTEM</div>
+    <h1>ひふみ旅館　飲料注文</h1>
+    <p>STAFF ORDER SYSTEM</p>
   </div>
-  <div class="header-right">
-    <div class="header-time" id="clock"></div>
-    <div class="api-status loading" id="apiStatus">未接続</div>
+  <div class="hdr-right">
+    <div class="clock" id="clk">--:--</div>
+    <div class="conn-pill">接続済み ✓</div>
   </div>
 </header>
+<div class="gold-line"></div>
 
-<main>
+<div class="form-wrap">
 
-  <!-- 部屋選択 -->
-  <div class="section-gap">
-    <div class="section-label">お部屋番号</div>
-    <div id="roomSelectArea">
-      <div class="state-box">APIに接続するとチェックイン中の部屋が表示されます</div>
+  <!-- ① 部屋番号 -->
+  <div class="room-block">
+    <span class="section-label">お部屋番号</span>
+    <select id="fRoom" onchange="onRoomChange()">
+      <option value="">— 部屋を選択してください —</option>
+      <optgroup label="1F">
+        <option value="101">101号室</option>
+        <option value="102">102号室</option>
+        <option value="103">103号室</option>
+        <option value="104">104号室</option>
+        <option value="105">105号室</option>
+      </optgroup>
+      <optgroup label="2F">
+        <option value="201">201号室</option>
+        <option value="202">202号室</option>
+        <option value="203">203号室</option>
+        <option value="204">204号室</option>
+        <option value="205">205号室</option>
+      </optgroup>
+      <optgroup label="3F">
+        <option value="301">301号室</option>
+        <option value="302">302号室</option>
+        <option value="303">303号室</option>
+        <option value="304">304号室</option>
+        <option value="305">305号室</option>
+      </optgroup>
+      <optgroup label="4F">
+        <option value="401">401号室</option>
+        <option value="402">402号室</option>
+        <option value="403">403号室</option>
+      </optgroup>
+    </select>
+
+    <!-- ★ お名前（部屋番号の下に表示） -->
+    <div class="name-display" id="nameDisplay">
+      <span class="name-icon">▸</span>
+      <span class="name-empty" id="nameTxt">部屋を選択するとお名前が表示されます</span>
     </div>
   </div>
 
-  <!-- 飲食備考 -->
-  <div class="section-gap">
-    <div class="section-label">飲食備考</div>
-    <div class="remarks-box">
-      <div class="remarks-existing empty" id="remarksExisting">部屋を選択すると備考が表示されます</div>
-      <span class="remarks-input-label">スタッフ追記欄</span>
-      <textarea class="remarks-input" id="remarksInput" placeholder="追記事項があればこちらに入力…"></textarea>
+  <!-- ② 飲食備考 -->
+  <div class="notes-block">
+    <span class="section-label">飲食備考</span>
+    <div id="allergyDisplay" style="background:#fff;border:1.5px solid var(--bdr);border-radius:8px;padding:10px 14px;font-size:13px;color:#bbb;min-height:40px;margin-bottom:8px;">
+      部屋を選択すると備考が表示されます
     </div>
+
+    <span class="section-label" style="margin-top:4px;">スタッフ追記欄</span>
+    <textarea id="fNote" placeholder="追記事項があればこちらに入力…"></textarea>
+    <button class="send-note-btn" id="sendNoteBtn" onclick="sendNote()">
+      気づいたことを報告する
+    </button>
   </div>
 
-  <!-- メニュー -->
-  <div class="section-gap">
-    <div class="section-label">メニュー選択</div>
+  <!-- ③ メニュー選択 -->
+  <div class="menu-block">
+    <span class="section-label">メニュー選択</span>
     <div id="menuArea">
-      <div class="state-box">APIに接続するとメニューが表示されます</div>
+      <div class="menu-placeholder">APIに接続するとメニューが表示されます<br><span style="font-size:11px;">（デモ用サンプルを表示中）</span></div>
     </div>
   </div>
 
-  <!-- サマリー -->
-  <div class="summary-box">
-    <div class="summary-title">注文内容</div>
-    <div id="summaryContent">
-      <div class="summary-empty">メニューを選択してください</div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-clear" onclick="clearAll()">クリア</button>
-      <button class="btn btn-order" id="orderBtn" onclick="submitOrder()" disabled>注文を確定する</button>
+  <!-- ④ 注文内容 -->
+  <div class="order-summary">
+    <div class="order-title">注文内容</div>
+    <div id="orderList"><div class="order-empty">メニューを選択してください</div></div>
+    <div class="order-actions">
+      <button class="btn-clear" onclick="clearOrder()">クリア</button>
+      <button class="btn-confirm" id="btnConfirm" onclick="confirmOrder()" disabled>注文を確定する</button>
     </div>
   </div>
 
-  <!-- 注文履歴 -->
-  <div class="history-section">
-    <div class="section-label">本日の注文履歴</div>
-    <div id="historyList">
-      <div style="font-size:13px;color:var(--ash);margin-top:10px;">まだ注文はありません</div>
-    </div>
-  </div>
-
-</main>
-
-<!-- 送信中オーバーレイ -->
-<div class="sending-overlay" id="sendingOverlay">
-  <div class="spinner"></div>
-  <div id="sendingMsg">Stayseeに送信中…</div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-  // ===== 状態 =====
-  let API_TOKEN = 'sk_e583d1d91a57d1c22bf28246ee0c322c';
-  const API_BASE = 'https://hifumi-order.onrender.com/v1';
-  let products = [];
-  let roomMap = {};
-  let roomReservationMap = {};
-  let itemQty = {};
-  const orderHistory = [];
+// ★ ここにGASのデプロイURLを貼り付けてください
+const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
-  // ===== API =====
-  async function apiGet(path, params = {}) {
-    const url = new URL(API_BASE + path);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-    const res = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-    });
-    if (!res.ok) throw new Error(`APIエラー: ${res.status}`);
-    return res.json();
+// ── Clock ──
+(function tick(){
+  const n=new Date();
+  document.getElementById('clk').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  setTimeout(tick,10000);
+})();
+
+// ── ゲスト情報（API連携後はStayseeから取得）──
+// サンプルデータ（実際はAPI経由で取得）
+const GUESTS = {
+  '101': { name: '山田　太郎 様', allergy: 'エビアレルギー1名' },
+  '102': { name: '鈴木　花子 様', allergy: '' },
+  '103': { name: '佐藤　一郎 様', allergy: '乳製品アレルギー' },
+  '201': { name: '田中　美咲 様', allergy: '' },
+  '203': { name: '渡辺　健二 様', allergy: 'そばアレルギー' },
+  '301': { name: '高橋　由美 様', allergy: '' },
+  '401': { name: '中村　大輔 様', allergy: '卵アレルギー1名' },
+};
+
+// サンプルメニュー
+const MENU = [
+  { id:1, name:'お酒(Sake)',        price:750 },
+  { id:2, name:'焼酎グラス',         price:600 },
+  { id:3, name:'ビール(Bottled)',    price:700 },
+  { id:4, name:'冷酒(bottled Sake)',price:800 },
+  { id:5, name:'ソフトドリンク',      price:300 },
+  { id:6, name:'お茶',              price:200 },
+];
+
+let cart = {};
+let currentRoom = '';
+
+function onRoomChange() {
+  currentRoom = document.getElementById('fRoom').value;
+  const guest = GUESTS[currentRoom];
+  const nameTxt = document.getElementById('nameTxt');
+  const allergyDiv = document.getElementById('allergyDisplay');
+
+  if (guest) {
+    nameTxt.className = 'name-txt';
+    nameTxt.textContent = guest.name;
+    allergyDiv.style.color = guest.allergy ? '#8b1a1a' : '#bbb';
+    allergyDiv.textContent = guest.allergy || '備考なし';
+  } else if (currentRoom) {
+    nameTxt.className = 'name-txt';
+    nameTxt.textContent = '（本日チェックインなし）';
+    allergyDiv.style.color = '#bbb';
+    allergyDiv.textContent = '備考なし';
+  } else {
+    nameTxt.className = 'name-empty';
+    nameTxt.textContent = '部屋を選択するとお名前が表示されます';
+    allergyDiv.style.color = '#bbb';
+    allergyDiv.textContent = '部屋を選択すると備考が表示されます';
   }
 
-  async function apiPost(path, body) {
-    const res = await fetch(API_BASE + path, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${API_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `APIエラー: ${res.status}`);
-    }
-    return res.json();
+  renderMenu();
+}
+
+function renderMenu() {
+  if (!currentRoom) {
+    document.getElementById('menuArea').innerHTML =
+      '<div class="menu-placeholder">部屋を選択するとメニューが表示されます</div>';
+    return;
   }
-
-  // ===== 初期化 =====
-  async function initApi() {
-    setApiStatus('loading', '接続中…');
-    try {
-      const today = todayStr();
-      const [productsData, roomsData, reservationsData] = await Promise.all([
-        apiGet('/products'),
-        apiGet('/rooms'),
-        apiGet('/reservations', { search_type: 'stay_date', date: today, children: 'allocate_rooms' })
-      ]);
-
-      // 商品マスタ（飲料カテゴリのみ・価格0円除外）
-      const allProducts = Array.isArray(productsData) ? productsData : (productsData.products || []);
-      products = allProducts.filter(p => p.product_category_id === 4 && p.price > 0);
-
-      // 部屋名マッピング
-      roomMap = {};
-      const rooms = Array.isArray(roomsData) ? roomsData : (roomsData.rooms || []);
-      rooms.forEach(r => { roomMap[r.id] = r.name; });
-
-      // チェックイン中（status=5）の予約 → room_id へマッピング
-      roomReservationMap = {};
-      const allRes = Array.isArray(reservationsData) ? reservationsData : (reservationsData.reservations || []);
-      allRes.filter(r => r.status === 5).forEach(res => {
-        (res.allocate_rooms || []).forEach(ar => {
-          roomReservationMap[ar.room_id] = res;
-        });
-      });
-
-      renderRoomSelect();
-      renderMenu();
-      setApiStatus('ok', '接続済み ✓');
-      showToast('Stayseeに接続しました', 'success');
-
-    } catch (e) {
-      setApiStatus('err', 'エラー');
-      showToast('接続失敗: ' + e.message, 'error');
-    }
-  }
-
-  // ===== 部屋プルダウン =====
-  function renderRoomSelect() {
-    const checkinRooms = Object.entries(roomReservationMap)
-      .map(([roomId]) => ({ roomId: parseInt(roomId), roomName: roomMap[roomId] || `部屋ID:${roomId}` }))
-      .sort((a, b) => a.roomName.localeCompare(b.roomName, 'ja'));
-
-    if (checkinRooms.length === 0) {
-      document.getElementById('roomSelectArea').innerHTML =
-        '<div class="state-box">現在チェックイン中の部屋はありません</div>';
-      return;
-    }
-
-    const select = document.createElement('select');
-    select.className = 'room-select';
-    select.id = 'roomSelect';
-    select.innerHTML = '<option value="">— 部屋を選択してください —</option>' +
-      checkinRooms.map(r => `<option value="${r.roomId}">${r.roomName}</option>`).join('');
-    select.addEventListener('change', onRoomChange);
-
-    const area = document.getElementById('roomSelectArea');
-    area.innerHTML = '';
-    area.appendChild(select);
-  }
-
-  function onRoomChange() {
-    const roomId = parseInt(document.getElementById('roomSelect')?.value);
-    const res = roomReservationMap[roomId];
-    const remarksEl = document.getElementById('remarksExisting');
-
-    if (!roomId || !res) {
-      remarksEl.className = 'remarks-existing empty';
-      remarksEl.innerHTML = '備考なし';
-    } else {
-      const note = res.food_remarks || res.remarks || '';
-      if (note) {
-        const isAlert = /アレルギー|禁止|除去|不可/.test(note);
-        remarksEl.className = 'remarks-existing';
-        remarksEl.innerHTML = `<span class="remarks-badge${isAlert ? ' alert' : ''}">${isAlert ? '⚠ アレルギー' : '備考'}</span><span>${note}</span>`;
-      } else {
-        remarksEl.className = 'remarks-existing empty';
-        remarksEl.innerHTML = '備考なし';
-      }
-    }
-    updateSummary();
-  }
-
-  // ===== メニュー生成（商品マスタから動的） =====
-  function renderMenu() {
-    if (products.length === 0) {
-      document.getElementById('menuArea').innerHTML =
-        '<div class="state-box error">商品マスタが取得できませんでした</div>';
-      return;
-    }
-
-    // カテゴリでグループ化
-    const categories = {};
-    products.forEach(p => {
-      const cat = p.product_category_name || 'その他';
-      if (!categories[cat]) categories[cat] = [];
-      categories[cat].push(p);
-      itemQty[p.id] = 0;
-    });
-
-    let html = '<div class="menu-grid">';
-    Object.entries(categories).forEach(([catName, items]) => {
-      html += `<div class="category-title">${catName}</div>`;
-      items.forEach(p => {
-        html += `
-          <div class="item-card" id="card-${p.id}">
-            <div class="item-name">${p.name}</div>
-            <div class="item-price">¥${Number(p.price).toLocaleString()} <span style="font-size:10px;">${p.tax_label || ''}</span></div>
-            <div class="qty-control">
-              <button class="qty-btn" onclick="changeQty(${p.id},-1)" style="font-size:22px;padding-bottom:2px;">−</button>
-              <div class="qty-display" id="qty-${p.id}">0</div>
-              <button class="qty-btn" onclick="changeQty(${p.id},1)">+</button>
-            </div>
-          </div>`;
-      });
-    });
-    html += '</div>';
-    document.getElementById('menuArea').innerHTML = html;
-  }
-
-  // ===== 数量・サマリー =====
-  function changeQty(id, delta) {
-    itemQty[id] = Math.max(0, (itemQty[id] || 0) + delta);
-    const qtyEl = document.getElementById('qty-' + id);
-    const cardEl = document.getElementById('card-' + id);
-    if (qtyEl) qtyEl.textContent = itemQty[id];
-    if (cardEl) cardEl.classList.toggle('has-qty', itemQty[id] > 0);
-    updateSummary();
-  }
-
-  function updateSummary() {
-    const ordered = products.filter(p => itemQty[p.id] > 0);
-    const total = ordered.reduce((s, p) => s + Number(p.price) * itemQty[p.id], 0);
-    const el = document.getElementById('summaryContent');
-    const btn = document.getElementById('orderBtn');
-    const roomSelected = document.getElementById('roomSelect')?.value;
-
-    if (ordered.length === 0) {
-      el.innerHTML = '<div class="summary-empty">メニューを選択してください</div>';
-      btn.disabled = true;
-      return;
-    }
-
-    el.innerHTML = ordered.map(p =>
-      `<div class="summary-item">
-        <span>${p.name} × ${itemQty[p.id]}</span>
-        <span>¥${(Number(p.price) * itemQty[p.id]).toLocaleString()}</span>
-      </div>`
-    ).join('') +
-    `<div class="summary-total"><span>合計</span><span>¥${total.toLocaleString()}</span></div>`;
-
-    btn.disabled = !roomSelected || !API_TOKEN;
-  }
-
-  function clearAll() {
-    products.forEach(p => {
-      itemQty[p.id] = 0;
-      const qtyEl = document.getElementById('qty-' + p.id);
-      const cardEl = document.getElementById('card-' + p.id);
-      if (qtyEl) qtyEl.textContent = 0;
-      if (cardEl) cardEl.classList.remove('has-qty');
-    });
-    updateSummary();
-  }
-
-  // ===== 注文確定 → Staysee送信 =====
-  async function submitOrder() {
-    const roomId = parseInt(document.getElementById('roomSelect')?.value);
-    const reservation = roomReservationMap[roomId];
-    if (!reservation) { showToast('予約情報が見つかりません', 'error'); return; }
-
-    const ordered = products.filter(p => itemQty[p.id] > 0);
-    if (ordered.length === 0) return;
-
-    const staffNote = document.getElementById('remarksInput').value.trim();
-    const total = ordered.reduce((s, p) => s + Number(p.price) * itemQty[p.id], 0);
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    const roomName = roomMap[roomId] || `部屋ID:${roomId}`;
-
-    document.getElementById('sendingMsg').textContent = 'Stayseeに送信中…';
-    document.getElementById('sendingOverlay').classList.add('show');
-
-    try {
-      await apiPost(`/reservations/${reservation.id}/optional_products`, {
-        auto_add: '1',
-        optional_products: ordered.map(p => ({
-          product_id: p.id,
-          number: itemQty[p.id],
-          page: ''
-        }))
-      });
-
-      orderHistory.unshift({
-        roomName, reservationId: reservation.id,
-        items: ordered.map(p => ({ name: p.name, qty: itemQty[p.id], price: Number(p.price) })),
-        total, time: timeStr, staffNote, success: true
-      });
-
-      // リセット
-      clearAll();
-      document.getElementById('roomSelect').value = '';
-      document.getElementById('remarksInput').value = '';
-      document.getElementById('remarksExisting').className = 'remarks-existing empty';
-      document.getElementById('remarksExisting').innerHTML = '部屋を選択すると備考が表示されます';
-      renderHistory();
-      showToast('Stayseeに登録しました ✓', 'success');
-
-    } catch (e) {
-      orderHistory.unshift({
-        roomName, reservationId: reservation.id,
-        items: ordered.map(p => ({ name: p.name, qty: itemQty[p.id], price: Number(p.price) })),
-        total, time: timeStr, staffNote, success: false, error: e.message
-      });
-      renderHistory();
-      showToast('送信失敗: ' + e.message, 'error');
-    } finally {
-      document.getElementById('sendingOverlay').classList.remove('show');
-    }
-  }
-
-  // ===== 履歴 =====
-  function renderHistory() {
-    const el = document.getElementById('historyList');
-    if (orderHistory.length === 0) {
-      el.innerHTML = '<div style="font-size:13px;color:var(--ash);margin-top:10px;">まだ注文はありません</div>';
-      return;
-    }
-    el.innerHTML = orderHistory.map(o => `
-      <div class="history-item">
-        <div class="history-meta">
-          <span class="history-room">${o.roomName}</span>
-          <span style="display:flex;align-items:center;gap:6px;">
-            <span class="history-badge ${o.success ? 'ok' : 'fail'}">${o.success ? 'Staysee登録済み' : '送信失敗'}</span>
-            ${o.time}
-          </span>
+  document.getElementById('menuArea').innerHTML =
+    '<div class="menu-grid">' +
+    MENU.map(m => `
+      <div class="menu-item">
+        <div class="menu-item-name">${m.name}</div>
+        <div class="menu-item-price">¥${m.price.toLocaleString()} 税込</div>
+        <div class="qty-row">
+          <button class="qty-btn" onclick="changeQty(${m.id},-1)">−</button>
+          <span class="qty-num" id="qty-${m.id}">${cart[m.id]||0}</span>
+          <button class="qty-btn" onclick="changeQty(${m.id},1)">＋</button>
         </div>
-        <div style="font-size:12px;color:var(--ash);">${o.items.map(i => `${i.name}×${i.qty}`).join('　')}</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">¥${o.total.toLocaleString()}</div>
-        ${o.staffNote ? `<div style="font-size:11px;color:var(--ash);margin-top:2px;">📝 ${o.staffNote}</div>` : ''}
-        ${!o.success ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">⚠ ${o.error}</div>` : ''}
-      </div>
-    `).join('');
-  }
+      </div>`).join('') +
+    '</div>';
+}
 
-  // ===== ユーティリティ =====
-  function todayStr() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function setApiStatus(type, text) {
-    const el = document.getElementById('apiStatus');
-    el.className = `api-status ${type}`;
-    el.textContent = text;
-  }
-  function showToast(msg, type = 'success') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = `toast ${type} show`;
-    setTimeout(() => t.classList.remove('show'), 3000);
-  }
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent =
-      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  }
-  updateClock();
-  setInterval(updateClock, 10000);
+function changeQty(id, delta) {
+  cart[id] = Math.max(0, (cart[id]||0) + delta);
+  const el = document.getElementById(`qty-${id}`);
+  if (el) el.textContent = cart[id];
+  renderOrder();
+}
 
-  // ページ読み込み時に自動接続
-  window.addEventListener('DOMContentLoaded', initApi);
+function renderOrder() {
+  const items = MENU.filter(m => cart[m.id] > 0);
+  const ol = document.getElementById('orderList');
+  const btn = document.getElementById('btnConfirm');
+  if (!items.length) {
+    ol.innerHTML = '<div class="order-empty">メニューを選択してください</div>';
+    btn.disabled = true;
+    return;
+  }
+  ol.innerHTML = items.map(m =>
+    `<div class="order-item"><span>${m.name} × ${cart[m.id]}</span><span>¥${(m.price*cart[m.id]).toLocaleString()}</span></div>`
+  ).join('');
+  btn.disabled = false;
+}
+
+function clearOrder() {
+  cart = {};
+  renderMenu();
+  renderOrder();
+}
+
+function confirmOrder() {
+  if (!currentRoom) { toast('部屋を選択してください'); return; }
+  toast(`${currentRoom}号室 注文を確定しました`);
+  clearOrder();
+}
+
+// ── スプレッドシートへ送信 ──
+async function sendNote() {
+  const room = currentRoom;
+  const note = document.getElementById('fNote').value.trim();
+  if (!room) { toast('部屋を選択してください'); return; }
+  if (!note) { toast('追記内容を入力してください'); return; }
+
+  const btn = document.getElementById('sendNoteBtn');
+  btn.classList.add('sending');
+  btn.textContent = '送信中…';
+
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room, note })
+    });
+    document.getElementById('fNote').value = '';
+    toast(`${room}号室の報告を記録しました`);
+  } catch (err) {
+    toast('送信に失敗しました。再度お試しください');
+  } finally {
+    btn.classList.remove('sending');
+    btn.innerHTML = '気づいたことを報告する';
+  }
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+renderMenu();
+renderOrder();
 </script>
 </body>
 </html>
