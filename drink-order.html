@@ -2,472 +2,420 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ひふみ旅館 飲料注文</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&family=Noto+Sans+JP:wght@300;400;500&display=swap');
 
-  :root {
-    --bg: #f0ece4;
-    --card: #faf8f4;
-    --hdr: #1a1a1a;
-    --gold: #b8963e;
-    --txt: #2c2c2c;
-    --sub: #888;
-    --bdr: #ddd8ce;
-    --green: #3a5a40;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--bg);
-    color: var(--txt);
-    max-width: 430px;
-    margin: 0 auto;
-    min-height: 100vh;
-  }
+:root {
+  --bg:      #f4f0e8;
+  --surface: #fdfbf7;
+  --hdr:     #111210;
+  --gold:    #b8963e;
+  --gold-lt: #d4af68;
+  --txt:     #1e1e1e;
+  --sub:     #8a8578;
+  --bdr:     #e0dbd0;
+  --danger:  #8b1a1a;
+  --green:   #2e4a36;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
 
-  /* ── HEADER ── */
-  header {
-    background: var(--hdr);
-    padding: 14px 18px 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: sticky; top: 0; z-index: 50;
-  }
-  header h1 { font-family: 'Noto Serif JP'; font-size: 18px; color: #fff; letter-spacing:.04em; }
-  header p  { font-size: 10px; color: var(--gold); letter-spacing:.14em; margin-top:2px; }
-  .hdr-right { text-align:right; }
-  .clock { font-size: 13px; color: #ccc; }
-  .conn-pill {
-    display:inline-flex; align-items:center; gap:4px;
-    background: var(--green); color:#fff;
-    font-size:11px; padding:3px 9px; border-radius:20px; margin-top:4px;
-  }
-  .conn-pill::before {
-    content:''; width:6px; height:6px; border-radius:50%;
-    background:#7ecf8e; display:inline-block;
-  }
-  .gold-line { height:2px; background: linear-gradient(90deg,var(--gold),transparent); }
+/* HEADER */
+header {
+  background: var(--hdr);
+  padding: 15px 18px 13px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  position: sticky; top: 0; z-index: 100;
+}
+.hdr-left h1 {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 18px; color: #fff; letter-spacing: .08em; font-weight: 600;
+}
+.hdr-left p { font-size: 9px; color: var(--gold); letter-spacing: .2em; margin-top: 3px; }
+.hdr-right  { text-align: right; }
+.clock { font-size: 14px; color: #999; font-weight: 300; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 5px; font-size: 10px; letter-spacing: .05em;
+  padding: 3px 10px; border-radius: 20px; font-weight: 500;
+}
+.badge::before { content:''; width:5px; height:5px; border-radius:50%; background:currentColor; }
+.badge.ok   { background: var(--green);  color: #a8d4b0; }
+.badge.wait { background: #2e2e1e;       color: var(--gold); }
+.badge.demo { background: #2a2a3a;       color: #a0a8d4; }
+.gold-rule { height: 2px; background: linear-gradient(90deg, var(--gold), transparent 70%); }
 
-  /* ── FORM WRAP ── */
-  .form-wrap { padding: 20px 16px 100px; }
+/* BODY */
+.body { padding: 20px 16px 130px; }
 
-  .section-label {
-    font-size: 11px; color: var(--sub);
-    margin-bottom: 8px; display: block; letter-spacing:.05em;
-  }
-  .section-label::before { content:'｜'; color:var(--gold); margin-right:4px; }
+/* FIELD */
+.field { margin-bottom: 20px; }
+.lbl {
+  font-size: 10px; color: var(--sub); letter-spacing: .12em;
+  margin-bottom: 7px; display: flex; align-items: center; gap: 6px;
+}
+.lbl::before {
+  content: ''; display: block; width: 2px; height: 11px;
+  background: var(--gold); border-radius: 2px; flex-shrink: 0;
+}
 
-  /* ── ROOM SELECT ── */
-  .room-block { margin-bottom: 14px; }
-  select, input, textarea {
-    width: 100%;
-    background: #fff;
-    border: 1.5px solid var(--bdr);
-    border-radius: 8px;
-    padding: 11px 14px;
-    font-size: 15px;
-    font-family: 'Noto Sans JP', sans-serif;
-    color: var(--txt);
-    outline: none;
-    -webkit-appearance: none;
-  }
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 13px center;
-    padding-right: 36px;
-  }
+/* SELECT */
+.sel-wrap { position: relative; }
+.sel-wrap select {
+  width: 100%; background: var(--surface);
+  border: 1.5px solid var(--bdr); border-radius: 10px;
+  padding: 12px 38px 12px 14px;
+  font-size: 15px; font-family: 'Noto Sans JP', sans-serif;
+  color: var(--txt); outline: none; -webkit-appearance: none; cursor: pointer;
+  transition: border-color .15s;
+}
+.sel-wrap select:focus { border-color: var(--gold); }
+.sel-wrap::after {
+  content: ''; position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); pointer-events: none;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 6px solid var(--sub);
+}
 
-  /* ── NAME DISPLAY (below room) ── */
-  .name-display {
-    margin-top: 8px;
-    background: #fff;
-    border: 1.5px solid var(--bdr);
-    border-radius: 8px;
-    padding: 10px 14px;
-    min-height: 42px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .name-display .name-icon {
-    font-size: 13px;
-    color: var(--gold);
-    flex-shrink: 0;
-  }
-  .name-display .name-txt {
-    font-size: 15px;
-    color: var(--txt);
-    font-weight: 500;
-  }
-  .name-display .name-empty {
-    font-size: 13px;
-    color: #bbb;
-  }
+/* GUEST NAME */
+.guest-card {
+  margin-top: 8px; background: var(--surface);
+  border: 1.5px solid var(--bdr); border-radius: 10px;
+  padding: 11px 14px; display: flex; align-items: center; gap: 10px;
+  min-height: 46px; transition: border-color .2s;
+}
+.guest-card.filled { border-color: var(--gold-lt); }
+.g-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--bdr);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--sub); flex-shrink: 0;
+}
+.guest-card.filled .g-icon { background: #f5edd8; border-color: var(--gold-lt); color: var(--gold); }
+.g-name  { font-size: 14px; font-weight: 500; }
+.g-empty { font-size: 13px; color: #bbb; }
 
-  /* ── NOTES SECTION ── */
-  .notes-block { margin-bottom: 14px; }
-  textarea { resize: none; height: 80px; font-size: 14px; }
+/* ALLERGY */
+.allergy-box {
+  background: var(--surface); border: 1.5px solid var(--bdr);
+  border-radius: 10px; padding: 11px 14px;
+  font-size: 13px; color: #bbb; min-height: 44px; line-height: 1.6;
+  margin-bottom: 10px;
+}
+.allergy-box.warn { color: var(--danger); border-color: #e8c8c8; background: #fdf8f8; font-weight: 500; }
 
-  /* GAS送信ボタ */
-  .send-note-btn {
-    width: 100%;
-    padding: 10px;
-    margin-top: 8px;
-    background: transparent;
-    border: 1.5px solid var(--gold);
-    border-radius: 8px;
-    color: var(--gold);
-    font-size: 13px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    letter-spacing: .03em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all .18s;
-  }
-  .send-note-btn:active { background: #fdf5e6; }
-  .send-note-btn.sending { opacity:.6; pointer-events:none; }
+/* TEXTAREA */
+textarea {
+  width: 100%; background: var(--surface);
+  border: 1.5px solid var(--bdr); border-radius: 10px;
+  padding: 11px 14px; font-size: 14px; font-family: 'Noto Sans JP', sans-serif;
+  color: var(--txt); outline: none; resize: none; height: 72px; line-height: 1.6;
+  transition: border-color .15s;
+}
+textarea:focus { border-color: var(--gold); }
+textarea::placeholder { color: #ccc; }
+.report-btn {
+  width: 100%; margin-top: 8px; padding: 11px;
+  border: 1.5px solid var(--gold); border-radius: 10px;
+  background: transparent; color: var(--gold);
+  font-size: 13px; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; letter-spacing: .05em; cursor: pointer;
+  transition: background .15s;
+}
+.report-btn:active  { background: #fdf5e6; }
+.report-btn:disabled { opacity: .4; cursor: default; }
 
-  /* ── MENU ── */
-  .menu-block { margin-bottom: 14px; }
-  .menu-placeholder {
-    background: #fff;
-    border: 1.5px solid var(--bdr);
-    border-radius: 8px;
-    padding: 28px 16px;
-    text-align: center;
-    color: #bbb;
-    font-size: 13px;
-    line-height: 1.8;
-  }
-  .menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .menu-item {
-    background: #fff;
-    border: 1.5px solid var(--bdr);
-    border-radius: 10px;
-    padding: 12px 10px 10px;
-    cursor: pointer;
-  }
-  .menu-item-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
-  .menu-item-price { font-size: 12px; color: var(--sub); margin-bottom: 8px; }
-  .qty-row { display: flex; align-items: center; justify-content: space-between; }
-  .qty-btn {
-    width: 32px; height: 32px;
-    border-radius: 50%; border: 1.5px solid var(--bdr);
-    background: var(--bg); font-size: 18px; line-height: 1;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: var(--txt);
-  }
-  .qty-btn:active { background: var(--bdr); }
-  .qty-num { font-size: 15px; font-weight: 500; min-width: 20px; text-align: center; }
+/* MENU */
+.menu-placeholder {
+  background: var(--surface); border: 1.5px solid var(--bdr); border-radius: 10px;
+  padding: 32px 16px; text-align: center; color: #ccc; font-size: 13px; line-height: 2;
+}
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu-card {
+  background: var(--surface); border: 1.5px solid var(--bdr); border-radius: 10px;
+  padding: 12px 12px 10px; transition: border-color .15s;
+}
+.menu-card.on { border-color: var(--gold-lt); }
+.m-name  { font-size: 13px; font-weight: 500; margin-bottom: 2px; line-height: 1.4; }
+.m-price { font-size: 11px; color: var(--sub); margin-bottom: 10px; }
+.qty-row { display: flex; align-items: center; justify-content: space-between; }
+.qty-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1.5px solid var(--bdr); background: var(--bg);
+  font-size: 17px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: var(--txt);
+}
+.qty-btn.plus.on { border-color: var(--gold); color: var(--gold); background: #fdf5e6; }
+.qty-num { font-size: 15px; font-weight: 500; min-width: 22px; text-align: center; }
 
-  /* ── ORDER SUMMARY ── */
-  .order-summary {
-    background: var(--hdr);
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 20px;
-  }
-  .order-title { color: var(--gold); font-size: 13px; letter-spacing:.05em; margin-bottom:12px; }
-  .order-empty { color:#666; font-size:13px; text-align:center; padding: 8px 0; }
-  .order-item {
-    display:flex; justify-content:space-between;
-    color:#fff; font-size:13px;
-    padding: 5px 0;
-    border-bottom: 1px solid #333;
-  }
-  .order-item:last-of-type { border-bottom:none; }
-  .order-actions { display:flex; gap:8px; margin-top:14px; }
-  .btn-clear {
-    flex:1; padding:12px;
-    background:transparent; border:1px solid #444;
-    border-radius:8px; color:#888; font-size:14px;
-    font-family:'Noto Sans JP'; cursor:pointer;
-  }
-  .btn-confirm {
-    flex:2; padding:12px;
-    background: var(--gold); border:none;
-    border-radius:8px; color:#fff; font-size:14px;
-    font-family:'Noto Sans JP'; font-weight:500;
-    cursor:pointer;
-  }
-  .btn-confirm:disabled { background:#555; cursor:default; }
+/* ORDER PANEL */
+.order-panel {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px; background: var(--hdr);
+  padding: 14px 16px 30px; z-index: 90; border-top: 1px solid #252520;
+}
+.order-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.order-title { font-size: 11px; color: var(--gold); letter-spacing: .1em; }
+.order-total { font-size: 13px; color: #fff; font-weight: 500; }
+.order-items { font-size: 12px; color: #666; min-height: 18px; margin-bottom: 10px; line-height: 1.6; }
+.order-actions { display: flex; gap: 8px; }
+.btn-clear {
+  flex: 1; padding: 11px; background: transparent; border: 1px solid #2e2e2e;
+  border-radius: 8px; color: #555; font-size: 13px; font-family: 'Noto Sans JP'; cursor: pointer;
+}
+.btn-confirm {
+  flex: 2.5; padding: 11px; background: var(--gold); border: none;
+  border-radius: 8px; color: #fff; font-size: 14px;
+  font-family: 'Noto Sans JP'; font-weight: 500; cursor: pointer; letter-spacing: .05em;
+}
+.btn-confirm:disabled { background: #252520; color: #444; cursor: default; }
 
-  /* ── TOAST ── */
-  .toast {
-    position:fixed; bottom:80px; left:50%;
-    transform:translateX(-50%) translateY(16px);
-    background:#2c2c2c; color:#fff;
-    padding:9px 18px; border-radius:20px;
-    font-size:13px; opacity:0; transition:all .25s;
-    pointer-events:none; white-space:nowrap; z-index:200;
-  }
-  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+/* TOAST */
+.toast {
+  position: fixed; bottom: 115px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #1a1a1a; color: #ddd;
+  padding: 9px 18px; border-radius: 24px; font-size: 12px;
+  opacity: 0; transition: all .25s; pointer-events: none;
+  white-space: nowrap; z-index: 200; border: 1px solid #2e2e2e;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
+  <div class="hdr-left">
     <h1>ひふみ旅館　飲料注文</h1>
     <p>STAFF ORDER SYSTEM</p>
   </div>
   <div class="hdr-right">
     <div class="clock" id="clk">--:--</div>
-    <div class="conn-pill">接続済み ✓</div>
+    <div class="badge wait" id="badge">接続中</div>
   </div>
 </header>
-<div class="gold-line"></div>
+<div class="gold-rule"></div>
 
-<div class="form-wrap">
+<div class="body">
 
-  <!-- ① 部屋番号 -->
-  <div class="room-block">
-    <span class="section-label">お部屋番号</span>
-    <select id="fRoom" onchange="onRoomChange()">
-      <option value="">— 部屋を選択してください —</option>
-      <optgroup label="1F">
-        <option value="101">101号室</option>
-        <option value="102">102号室</option>
-        <option value="103">103号室</option>
-        <option value="104">104号室</option>
-        <option value="105">105号室</option>
-      </optgroup>
-      <optgroup label="2F">
-        <option value="201">201号室</option>
-        <option value="202">202号室</option>
-        <option value="203">203号室</option>
-        <option value="204">204号室</option>
-        <option value="205">205号室</option>
-      </optgroup>
-      <optgroup label="3F">
-        <option value="301">301号室</option>
-        <option value="302">302号室</option>
-        <option value="303">303号室</option>
-        <option value="304">304号室</option>
-        <option value="305">305号室</option>
-      </optgroup>
-      <optgroup label="4F">
-        <option value="401">401号室</option>
-        <option value="402">402号室</option>
-        <option value="403">403号室</option>
-      </optgroup>
-    </select>
-
-    <!-- ★ お名前（部屋番号の下に表示） -->
-    <div class="name-display" id="nameDisplay">
-      <span class="name-icon">▸</span>
-      <span class="name-empty" id="nameTxt">部屋を選択するとお名前が表示されます</span>
+  <!-- 部屋番号 -->
+  <div class="field">
+    <div class="lbl">お部屋番号</div>
+    <div class="sel-wrap">
+      <select id="fRoom" onchange="onRoomChange()" disabled>
+        <option value="">読み込み中...</option>
+      </select>
+    </div>
+    <div class="guest-card" id="guestCard">
+      <div class="g-icon">人</div>
+      <span class="g-empty" id="gName">部屋を選択するとお名前が表示されます</span>
     </div>
   </div>
 
-  <!-- ② 飲食備考 -->
-  <div class="notes-block">
-    <span class="section-label">飲食備考</span>
-    <div id="allergyDisplay" style="background:#fff;border:1.5px solid var(--bdr);border-radius:8px;padding:10px 14px;font-size:13px;color:#bbb;min-height:40px;margin-bottom:8px;">
-      部屋を選択すると備考が表示されます
-    </div>
-
-    <span class="section-label" style="margin-top:4px;">スタッフ追記欄</span>
-    <textarea id="fNote" placeholder="追記事項があればこちらに入力…"></textarea>
-    <button class="send-note-btn" id="sendNoteBtn" onclick="sendNote()">
-      気づいたことを報告する
-    </button>
+  <!-- 飲食備考 -->
+  <div class="field">
+    <div class="lbl">飲食備考</div>
+    <div class="allergy-box" id="allergyBox">部屋を選択すると備考が表示されます</div>
+    <div class="lbl" style="margin-top:2px;">スタッフ追記欄</div>
+    <textarea id="fNote" placeholder="気づいたことがあれば入力してください..."></textarea>
+    <button class="report-btn" id="reportBtn" onclick="sendNote()">気づいたことを報告する</button>
   </div>
 
-  <!-- ③ メニュー選択 -->
-  <div class="menu-block">
-    <span class="section-label">メニュー選択</span>
+  <!-- メニュー -->
+  <div class="field">
+    <div class="lbl">メニュー選択　飲料</div>
     <div id="menuArea">
-      <div class="menu-placeholder">APIに接続するとメニューが表示されます<br><span style="font-size:11px;">（デモ用サンプルを表示中）</span></div>
-    </div>
-  </div>
-
-  <!-- ④ 注文内容 -->
-  <div class="order-summary">
-    <div class="order-title">注文内容</div>
-    <div id="orderList"><div class="order-empty">メニューを選択してください</div></div>
-    <div class="order-actions">
-      <button class="btn-clear" onclick="clearOrder()">クリア</button>
-      <button class="btn-confirm" id="btnConfirm" onclick="confirmOrder()" disabled>注文を確定する</button>
+      <div class="menu-placeholder">部屋を選択するとメニューが表示されます</div>
     </div>
   </div>
 
 </div>
 
+<!-- 注文パネル -->
+<div class="order-panel">
+  <div class="order-head">
+    <span class="order-title">注文内容</span>
+    <span class="order-total" id="orderTotal"></span>
+  </div>
+  <div class="order-items" id="orderItems">メニューを選択してください</div>
+  <div class="order-actions">
+    <button class="btn-clear" onclick="clearOrder()">クリア</button>
+    <button class="btn-confirm" id="btnConfirm" onclick="confirmOrder()" disabled>注文を確定する</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-// ★ ここにGASのデプロイURLを貼り付けてください
+// ★ GASデプロイURLをここに貼る
 const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
-// ── Clock ──
-(function tick(){
-  const n=new Date();
-  document.getElementById('clk').textContent=
-    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
-  setTimeout(tick,10000);
-})();
-
-// ── ゲスト情報（API連携後はStayseeから取得）──
-// サンプルデータ（実際はAPI経由で取得）
-const GUESTS = {
-  '101': { name: '山田　太郎 様', allergy: 'エビアレルギー1名' },
-  '102': { name: '鈴木　花子 様', allergy: '' },
-  '103': { name: '佐藤　一郎 様', allergy: '乳製品アレルギー' },
-  '201': { name: '田中　美咲 様', allergy: '' },
-  '203': { name: '渡辺　健二 様', allergy: 'そばアレルギー' },
-  '301': { name: '高橋　由美 様', allergy: '' },
-  '401': { name: '中村　大輔 様', allergy: '卵アレルギー1名' },
-};
-
-// サンプルメニュー
 const MENU = [
-  { id:1, name:'お酒(Sake)',        price:750 },
-  { id:2, name:'焼酎グラス',         price:600 },
-  { id:3, name:'ビール(Bottled)',    price:700 },
-  { id:4, name:'冷酒(bottled Sake)',price:800 },
-  { id:5, name:'ソフトドリンク',      price:300 },
-  { id:6, name:'お茶',              price:200 },
+  { id:1, name:'お酒 (Sake)',         price: 750 },
+  { id:2, name:'焼酎グラス',           price: 600 },
+  { id:3, name:'ビール (Bottled)',     price: 700 },
+  { id:4, name:'冷酒 (Bottled Sake)', price: 800 },
+  { id:5, name:'ソフトドリンク',        price: 300 },
+  { id:6, name:'お茶',                price: 200 },
 ];
 
-let cart = {};
-let currentRoom = '';
+let GUESTS = {}, currentRoom = '', cart = {};
 
-// チェックイン中の部屋のみドロップダウンに追加
-(function buildRoomSelect() {
-  const sel = document.getElementById('fRoom');
-  const rooms = Object.keys(GUESTS).sort((a, b) => Number(a) - Number(b));
-  rooms.forEach(room => {
-    const opt = document.createElement('option');
-    opt.value = room;
-    opt.textContent = room + '号室　' + GUESTS[room].name;
-    sel.appendChild(opt);
-  });
+// 時計
+(function tick(){
+  const n = new Date();
+  document.getElementById('clk').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  setTimeout(tick, 10000);
 })();
 
+// Staysee API（GAS経由）からチェックイン部屋を取得
+async function loadRooms() {
+  try {
+    const res  = await fetch(GAS_URL, { method: 'GET' });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+    GUESTS = {};
+    (data.rooms || []).forEach(r => { GUESTS[r.room] = { name: r.name, allergy: r.allergy||'' }; });
+    buildRoomSelect();
+    setbadge('ok', '接続済み ✓');
+  } catch {
+    // GAS未設定時はサンプルで動作
+    GUESTS = {
+      '101': { name: '山田　太郎 様', allergy: 'エビアレルギー 1名' },
+      '203': { name: '渡辺　健二 様', allergy: '' },
+      '301': { name: '高橋　由美 様', allergy: '乳製品アレルギー' },
+      '401': { name: '中村　大輔 様', allergy: '' },
+    };
+    buildRoomSelect();
+    setbadge('demo', 'サンプル表示');
+  }
+}
+
+function buildRoomSelect() {
+  const sel = document.getElementById('fRoom');
+  const rooms = Object.keys(GUESTS).sort((a,b) => Number(a)-Number(b));
+  sel.innerHTML = '<option value="">— 部屋を選択してください —</option>';
+  if (!rooms.length) { sel.innerHTML = '<option value="">チェックイン中の部屋がありません</option>'; sel.disabled=true; return; }
+  rooms.forEach(room => {
+    const o = document.createElement('option');
+    o.value = room; o.textContent = room + '号室　' + GUESTS[room].name;
+    sel.appendChild(o);
+  });
+  sel.disabled = false;
+}
+
+function setbadge(type, label) {
+  const b = document.getElementById('badge');
+  b.className = 'badge ' + type; b.textContent = label;
+}
+
+// 部屋選択
 function onRoomChange() {
   currentRoom = document.getElementById('fRoom').value;
   const guest = GUESTS[currentRoom];
-  const nameTxt = document.getElementById('nameTxt');
-  const allergyDiv = document.getElementById('allergyDisplay');
+  const card  = document.getElementById('guestCard');
+  const nameEl = document.getElementById('gName');
+  const aBox   = document.getElementById('allergyBox');
 
   if (guest) {
-    nameTxt.className = 'name-txt';
-    nameTxt.textContent = guest.name;
-    allergyDiv.style.color = guest.allergy ? '#8b1a1a' : '#bbb';
-    allergyDiv.textContent = guest.allergy || '備考なし';
+    card.classList.add('filled');
+    nameEl.className = 'g-name'; nameEl.textContent = guest.name;
+    aBox.className = guest.allergy ? 'allergy-box warn' : 'allergy-box';
+    aBox.textContent = guest.allergy ? guest.allergy : '備考なし';
   } else {
-    nameTxt.className = 'name-empty';
-    nameTxt.textContent = '部屋を選択するとお名前が表示されます';
-    allergyDiv.style.color = '#bbb';
-    allergyDiv.textContent = '部屋を選択すると備考が表示されます';
+    card.classList.remove('filled');
+    nameEl.className = 'g-empty'; nameEl.textContent = '部屋を選択するとお名前が表示されます';
+    aBox.className = 'allergy-box'; aBox.textContent = '部屋を選択すると備考が表示されます';
   }
-
-  renderMenu();
+  cart = {}; renderMenu(); renderOrder();
 }
 
+// メニュー
 function renderMenu() {
-  if (!currentRoom) {
-    document.getElementById('menuArea').innerHTML =
-      '<div class="menu-placeholder">部屋を選択するとメニューが表示されます</div>';
-    return;
-  }
-  document.getElementById('menuArea').innerHTML =
-    '<div class="menu-grid">' +
-    MENU.map(m => `
-      <div class="menu-item">
-        <div class="menu-item-name">${m.name}</div>
-        <div class="menu-item-price">¥${m.price.toLocaleString()} 税込</div>
+  const area = document.getElementById('menuArea');
+  if (!currentRoom) { area.innerHTML = '<div class="menu-placeholder">部屋を選択するとメニューが表示されます</div>'; return; }
+  area.innerHTML = '<div class="menu-grid">' +
+    MENU.map(m => {
+      const q = cart[m.id]||0;
+      return `<div class="menu-card ${q>0?'on':''}" id="mc-${m.id}">
+        <div class="m-name">${m.name}</div>
+        <div class="m-price">¥${m.price.toLocaleString()} 税込</div>
         <div class="qty-row">
-          <button class="qty-btn" onclick="changeQty(${m.id},-1)">−</button>
-          <span class="qty-num" id="qty-${m.id}">${cart[m.id]||0}</span>
-          <button class="qty-btn" onclick="changeQty(${m.id},1)">＋</button>
+          <button class="qty-btn" onclick="chg(${m.id},-1)">－</button>
+          <span class="qty-num" id="q-${m.id}">${q}</span>
+          <button class="qty-btn plus ${q>0?'on':''}" onclick="chg(${m.id},1)">＋</button>
         </div>
-      </div>`).join('') +
-    '</div>';
+      </div>`;
+    }).join('') + '</div>';
 }
 
-function changeQty(id, delta) {
-  cart[id] = Math.max(0, (cart[id]||0) + delta);
-  const el = document.getElementById(`qty-${id}`);
-  if (el) el.textContent = cart[id];
+function chg(id, d) {
+  cart[id] = Math.max(0, (cart[id]||0) + d);
+  const q = cart[id];
+  const qEl = document.getElementById('q-'+id);
+  const mc  = document.getElementById('mc-'+id);
+  if (qEl) qEl.textContent = q;
+  if (mc) {
+    mc.classList.toggle('on', q>0);
+    const plus = mc.querySelector('.qty-btn.plus');
+    if (plus) plus.classList.toggle('on', q>0);
+  }
   renderOrder();
 }
 
+// 注文サマリー
 function renderOrder() {
-  const items = MENU.filter(m => cart[m.id] > 0);
-  const ol = document.getElementById('orderList');
+  const items = MENU.filter(m => (cart[m.id]||0)>0);
+  const total = items.reduce((s,m) => s+m.price*cart[m.id], 0);
+  const iEl = document.getElementById('orderItems');
+  const tEl = document.getElementById('orderTotal');
   const btn = document.getElementById('btnConfirm');
-  if (!items.length) {
-    ol.innerHTML = '<div class="order-empty">メニューを選択してください</div>';
-    btn.disabled = true;
-    return;
-  }
-  ol.innerHTML = items.map(m =>
-    `<div class="order-item"><span>${m.name} × ${cart[m.id]}</span><span>¥${(m.price*cart[m.id]).toLocaleString()}</span></div>`
-  ).join('');
+  if (!items.length) { iEl.textContent='メニューを選択してください'; tEl.textContent=''; btn.disabled=true; return; }
+  iEl.innerHTML = items.map(m=>`<span>${m.name} × ${cart[m.id]}</span>`).join('　');
+  tEl.textContent = '合計 ¥'+total.toLocaleString();
   btn.disabled = false;
 }
 
-function clearOrder() {
-  cart = {};
-  renderMenu();
-  renderOrder();
-}
+function clearOrder() { cart={}; renderMenu(); renderOrder(); }
 
 function confirmOrder() {
   if (!currentRoom) { toast('部屋を選択してください'); return; }
-  toast(`${currentRoom}号室 注文を確定しました`);
+  toast(currentRoom+'号室 注文を確定しました');
   clearOrder();
 }
 
-// ── スプレッドシートへ送信 ──
+// 追記送信
 async function sendNote() {
-  const room = currentRoom;
   const note = document.getElementById('fNote').value.trim();
-  if (!room) { toast('部屋を選択してください'); return; }
-  if (!note) { toast('追記内容を入力してください'); return; }
-
-  const btn = document.getElementById('sendNoteBtn');
-  btn.classList.add('sending');
-  btn.textContent = '送信中…';
-
+  if (!currentRoom) { toast('部屋を選択してください'); return; }
+  if (!note)        { toast('追記内容を入力してください'); return; }
+  const btn = document.getElementById('reportBtn');
+  btn.disabled=true; btn.textContent='送信中...';
   try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room, note })
-    });
-    document.getElementById('fNote').value = '';
-    toast(`${room}号室の報告を記録しました`);
-  } catch (err) {
-    toast('送信に失敗しました。再度お試しください');
-  } finally {
-    btn.classList.remove('sending');
-    btn.innerHTML = '気づいたことを報告する';
-  }
+    await fetch(GAS_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({room:currentRoom,note}) });
+    document.getElementById('fNote').value='';
+    toast(currentRoom+'号室の報告を記録しました');
+  } catch { toast('送信に失敗しました'); }
+  finally { btn.disabled=false; btn.textContent='気づいたことを報告する'; }
 }
 
-function toast(msg){
+function toast(msg) {
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
+  setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-renderMenu();
+loadRooms();
 renderOrder();
 </script>
 </body>
