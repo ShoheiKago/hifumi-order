@@ -494,7 +494,7 @@
     if (ordered.length === 0) return;
 
     const staffNote = document.getElementById('remarksInput').value.trim();
-    const guestName = res.name_kanji || res.name_kana || '';
+    const guestName = reservation.name_kanji || reservation.name_kana || '';
     const total = ordered.reduce((s, p) => s + Number(p.price) * itemQty[p.id], 0);
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
