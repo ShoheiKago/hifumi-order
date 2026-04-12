@@ -378,10 +378,11 @@
       guestEl.innerHTML = '部屋を選択すると表示されます';
     } else {
       // ゲスト名表示
-      const name = res.name || res.guest_name || res.customer_name || '';
+      const name = res.name_kanji || res.name_kana || '';
+      const kana = res.name_kana && res.name_kanji ? `（${res.name_kana}）` : '';
       if (name) {
         guestEl.className = 'guest-name-box';
-        guestEl.innerHTML = `<span class="guest-name-label">宿泊者</span><span>${name} 様</span>`;
+        guestEl.innerHTML = `<span class="guest-name-label">宿泊者</span><span>${name}${kana} 様</span>`;
       } else {
         guestEl.className = 'guest-name-box empty';
         guestEl.innerHTML = '名前情報なし';
@@ -493,7 +494,7 @@
     if (ordered.length === 0) return;
 
     const staffNote = document.getElementById('remarksInput').value.trim();
-    const guestName = res.name || res.guest_name || res.customer_name || '';
+    const guestName = res.name_kanji || res.name_kana || '';
     const total = ordered.reduce((s, p) => s + Number(p.price) * itemQty[p.id], 0);
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
