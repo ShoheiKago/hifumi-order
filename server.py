@@ -41,8 +41,9 @@ def proxy(path):
 # ===== LINE通知送信 =====
 def send_line(message):
     if not LINE_TOKEN or not LINE_GROUP_ID:
+        print('LINE_TOKEN or LINE_GROUP_ID is empty')
         return
-    requests.post(
+    r = requests.post(
         'https://api.line.me/v2/bot/message/push',
         headers={
             'Authorization': f'Bearer {LINE_TOKEN}',
@@ -53,6 +54,8 @@ def send_line(message):
             'messages': [{'type': 'text', 'text': message}]
         }
     )
+    print(f'LINE API status: {r.status_code}')
+    print(f'LINE API response: {r.text}')
 
 @app.route('/notify', methods=['POST', 'OPTIONS'])
 def notify():
