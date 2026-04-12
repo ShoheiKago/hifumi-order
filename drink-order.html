@@ -456,19 +456,25 @@
     const btn = document.getElementById('orderBtn');
     const roomSelected = document.getElementById('roomSelect')?.value;
 
-    if (ordered.length === 0) {
-      el.innerHTML = '<div class="summary-empty">メニューを選択してください</div>';
+    const staffNote = document.getElementById('remarksInput')?.value.trim() || '';
+
+    if (ordered.length === 0 && !staffNote) {
+      el.innerHTML = '<div class="summary-empty">メニューを選択するか追記欄に入力してください</div>';
       btn.disabled = true;
       return;
     }
 
-    el.innerHTML = ordered.map(p =>
-      `<div class="summary-item">
-        <span>${p.name} × ${itemQty[p.id]}</span>
-        <span>¥${(Number(p.price) * itemQty[p.id]).toLocaleString()}</span>
-      </div>`
-    ).join('') +
-    `<div class="summary-total"><span>合計</span><span>¥${total.toLocaleString()}</span></div>`;
+    if (ordered.length === 0 && staffNote) {
+      el.innerHTML = '<div class="summary-empty" style="color:var(--gold-light);">📝 追記のみで送信します</div>';
+    } else {
+      el.innerHTML = ordered.map(p =>
+        `<div class="summary-item">
+          <span>${p.name} × ${itemQty[p.id]}</span>
+          <span>¥${(Number(p.price) * itemQty[p.id]).toLocaleString()}</span>
+        </div>`
+      ).join('') +
+      `<div class="summary-total"><span>合計</span><span>¥${total.toLocaleString()}</span></div>`;
+    }
 
     btn.disabled = !roomSelected || !API_TOKEN;
   }
@@ -491,9 +497,10 @@
     if (!reservation) { showToast('予約情報が見つかりません', 'error'); return; }
 
     const ordered = products.filter(p => itemQty[p.id] > 0);
-    if (ordered.length === 0) return;
-
     const staffNote = document.getElementById('remarksInput').value.trim();
+
+    // 商品なし・追記なしは送信不可
+    if (ordered.length === 0 && !staffNote) return;
     const guestName = reservation.name_kanji || reservation.name_kana || '';
     const total = ordered.reduce((s, p) => s + Number(p.price) * itemQty[p.id], 0);
     const now = new Date();
@@ -504,19 +511,24 @@
     document.getElementById('sendingOverlay').classList.add('show');
 
     try {
-      await apiPost(`/reservations/${reservation.id}/optional_products`, {
-        auto_add: '1',
-        optional_products: ordered.map(p => ({
-          product_id: p.id,
-          number: itemQty[p.id],
-          page: ''
-        }))
-      });
+      // 商品がある場合のみStayseeに送信
+      if (ordered.length > 0) {
+        await apiPost(`/reservations/${reservation.id}/optional_products`, {
+          auto_add: '1',
+          optional_products: ordered.map(p => ({
+            product_id: p.id,
+            number: itemQty[p.id],
+            page: ''
+          }))
+        });
+      }
 
       orderHistory.unshift({
         roomName, reservationId: reservation.id, guestName,
         items: ordered.map(p => ({ name: p.name, qty: itemQty[p.id], price: Number(p.price) })),
-        total, time: timeStr, staffNote, success: true
+        total, time: timeStr, staffNote,
+        success: true,
+        noteOnly: ordered.length === 0
       });
 
       // スタッフ追記がある場合のみLINE通知
@@ -574,8 +586,8 @@
             ${o.time}
           </span>
         </div>
-        <div style="font-size:12px;color:var(--ash);">${o.items.map(i => `${i.name}×${i.qty}`).join('　')}</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">¥${o.total.toLocaleString()}</div>
+        <div style="font-size:12px;color:var(--ash);">${o.noteOnly ? '（追記のみ）' : o.items.map(i => `${i.name}×${i.qty}`).join('　')}</div>
+        <div style="font-size:13px;font-weight:500;margin-top:4px;">${o.noteOnly ? '' : `¥${o.total.toLocaleString()}`}</div>
         ${o.staffNote ? `<div style="font-size:11px;color:var(--ash);margin-top:2px;">📝 ${o.staffNote}</div>` : ''}
         ${!o.success ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">⚠ ${o.error}</div>` : ''}
       </div>
@@ -607,7 +619,10 @@
   setInterval(updateClock, 10000);
 
   // ページ読み込み時に自動接続
-  window.addEventListener('DOMContentLoaded', initApi);
+  window.addEventListener('DOMContentLoaded', () => {
+    initApi();
+    document.getElementById('remarksInput')?.addEventListener('input', updateSummary);
+  });
 </script>
 </body>
 </html>
