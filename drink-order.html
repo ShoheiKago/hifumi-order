@@ -162,6 +162,31 @@
   .history-badge.ok { background: var(--matcha); color: #fff; }
   .history-badge.fail { background: var(--red); color: #fff; }
 
+  .guest-name-box {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .guest-name-box.empty { color: var(--ash); font-size: 13px; font-weight: 400; font-style: italic; }
+  .guest-name-label {
+    font-size: 10px;
+    background: var(--gold);
+    color: #fff;
+    border-radius: 3px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+    font-style: normal;
+    font-weight: 500;
+  }
+
   .section-gap { margin-top: 24px; }
 </style>
 </head>
@@ -186,6 +211,12 @@
     <div id="roomSelectArea">
       <div class="state-box">APIに接続するとチェックイン中の部屋が表示されます</div>
     </div>
+  </div>
+
+  <!-- ゲスト名 -->
+  <div class="section-gap">
+    <div class="section-label">ご宿泊者名</div>
+    <div class="guest-name-box empty" id="guestNameBox">部屋を選択すると表示されます</div>
   </div>
 
   <!-- 飲食備考 -->
@@ -338,11 +369,25 @@
     const roomId = parseInt(document.getElementById('roomSelect')?.value);
     const res = roomReservationMap[roomId];
     const remarksEl = document.getElementById('remarksExisting');
+    const guestEl = document.getElementById('guestNameBox');
 
     if (!roomId || !res) {
       remarksEl.className = 'remarks-existing empty';
       remarksEl.innerHTML = '備考なし';
+      guestEl.className = 'guest-name-box empty';
+      guestEl.innerHTML = '部屋を選択すると表示されます';
     } else {
+      // ゲスト名表示
+      const name = res.name || res.guest_name || res.customer_name || '';
+      if (name) {
+        guestEl.className = 'guest-name-box';
+        guestEl.innerHTML = `<span class="guest-name-label">宿泊者</span><span>${name} 様</span>`;
+      } else {
+        guestEl.className = 'guest-name-box empty';
+        guestEl.innerHTML = '名前情報なし';
+      }
+
+      // 備考表示
       const note = res.food_remarks || res.remarks || '';
       if (note) {
         const isAlert = /アレルギー|禁止|除去|不可/.test(note);
@@ -448,6 +493,7 @@
     if (ordered.length === 0) return;
 
     const staffNote = document.getElementById('remarksInput').value.trim();
+    const guestName = res.name || res.guest_name || res.customer_name || '';
     const total = ordered.reduce((s, p) => s + Number(p.price) * itemQty[p.id], 0);
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -467,7 +513,7 @@
       });
 
       orderHistory.unshift({
-        roomName, reservationId: reservation.id,
+        roomName, reservationId: reservation.id, guestName,
         items: ordered.map(p => ({ name: p.name, qty: itemQty[p.id], price: Number(p.price) })),
         total, time: timeStr, staffNote, success: true
       });
@@ -478,12 +524,14 @@
       document.getElementById('remarksInput').value = '';
       document.getElementById('remarksExisting').className = 'remarks-existing empty';
       document.getElementById('remarksExisting').innerHTML = '部屋を選択すると備考が表示されます';
+      document.getElementById('guestNameBox').className = 'guest-name-box empty';
+      document.getElementById('guestNameBox').innerHTML = '部屋を選択すると表示されます';
       renderHistory();
       showToast('Stayseeに登録しました ✓', 'success');
 
     } catch (e) {
       orderHistory.unshift({
-        roomName, reservationId: reservation.id,
+        roomName, reservationId: reservation.id, guestName,
         items: ordered.map(p => ({ name: p.name, qty: itemQty[p.id], price: Number(p.price) })),
         total, time: timeStr, staffNote, success: false, error: e.message
       });
@@ -504,7 +552,7 @@
     el.innerHTML = orderHistory.map(o => `
       <div class="history-item">
         <div class="history-meta">
-          <span class="history-room">${o.roomName}</span>
+          <span class="history-room">${o.roomName}${o.guestName ? `　${o.guestName} 様` : ''}</span>
           <span style="display:flex;align-items:center;gap:6px;">
             <span class="history-badge ${o.success ? 'ok' : 'fail'}">${o.success ? 'Staysee登録済み' : '送信失敗'}</span>
             ${o.time}
