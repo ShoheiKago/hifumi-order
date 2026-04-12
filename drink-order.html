@@ -519,6 +519,21 @@
         total, time: timeStr, staffNote, success: true
       });
 
+      // スタッフ追記がある場合のみLINE通知
+      if (staffNote) {
+        fetch('https://hifumi-order.onrender.com/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            room: roomName,
+            guest: guestName,
+            items: ordered.map(p => ({ name: p.name, qty: itemQty[p.id] })),
+            total,
+            note: staffNote
+          })
+        }).catch(e => console.error('LINE通知失敗:', e));
+      }
+
       // リセット
       clearAll();
       document.getElementById('roomSelect').value = '';
