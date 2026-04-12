@@ -43,6 +43,8 @@ def send_line(message):
     if not LINE_TOKEN or not LINE_GROUP_ID:
         print('LINE_TOKEN or LINE_GROUP_ID is empty')
         return
+    print(f'LINE_TOKEN prefix: {LINE_TOKEN[:15]}')
+    print(f'LINE_GROUP_ID: {LINE_GROUP_ID}')
     r = requests.post(
         'https://api.line.me/v2/bot/message/push',
         headers={
