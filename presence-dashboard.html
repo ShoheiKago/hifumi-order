@@ -336,8 +336,10 @@
       <div id="assignRows"></div>
     </div>
 
+    <div id="webhookStatus" style="margin-top:12px;font-size:11px;color:var(--ash);display:none;"></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">キャンセル</button>
+      <button class="btn-secondary" onclick="setupWebhook()" style="color:var(--gold);border-color:var(--gold-dim);">Webhook設定</button>
       <button class="btn-primary" id="connectBtn" onclick="connectApi()">接続して取得</button>
     </div>
   </div>
@@ -519,6 +521,32 @@ function openSettings() {
   if (devices.length > 0) renderAssignSection();
 
   document.getElementById('settingsModal').style.display = 'flex';
+}
+
+
+async function setupWebhook() {
+  const webhookUrl = 'https://hifumi-order.onrender.com/switchbot/webhook/receive';
+  const statusEl = document.getElementById('webhookStatus');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Webhook設定中...';
+  try {
+    const res = await fetch(`${PROXY}/switchbot/webhook/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, secret, url: webhookUrl })
+    });
+    const data = await res.json();
+    if (data.statusCode === 100 || data.statusCode === 151) {
+      statusEl.style.color = 'var(--green-bright)';
+      statusEl.textContent = '✓ Webhook設定完了: ' + webhookUrl;
+    } else {
+      statusEl.style.color = '#e05c5c';
+      statusEl.textContent = 'エラー: ' + JSON.stringify(data);
+    }
+  } catch(e) {
+    statusEl.style.color = '#e05c5c';
+    statusEl.textContent = '接続失敗: ' + e.message;
+  }
 }
 
 function closeSettings() {
