@@ -142,12 +142,30 @@ def switchbot_webhook_setup():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ===== SwitchBot Webhook受信 =====
+# ===== SwitchBot Webhook 状態保持 =====
+# deviceId -> 最終検知タイムスタンプ（ミリ秒）
+detection_state = {}
+
 @app.route('/switchbot/webhook/receive', methods=['POST'])
 def switchbot_webhook_receive():
     payload = request.get_json()
     print('SwitchBot Webhook:', json.dumps(payload))
+    try:
+        # SwitchBot Webhookのフォーマット: context.deviceMac or deviceId
+        context = payload.get('context', {})
+        device_id = context.get('deviceMac') or context.get('deviceId', '')
+        event_type = context.get('eventType', '')
+        # 動体検知イベント: WoPresence または motion系
+        if device_id and ('motion' in event_type.lower() or 'detected' in event_type.lower() or context.get('moveDetected') or context.get('detectionState') == 'DETECTED'):
+            detection_state[device_id] = int(time.time() * 1000)
+            print(f'Motion detected: {device_id} at {detection_state[device_id]}')
+    except Exception as e:
+        print('Webhook parse error:', e)
     return jsonify({'status': 'ok'})
+
+@app.route('/switchbot/webhook/status', methods=['GET'])
+def switchbot_webhook_status():
+    return jsonify({'detections': detection_state})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
