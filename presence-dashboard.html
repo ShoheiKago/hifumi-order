@@ -359,6 +359,7 @@ const ROOMS = {
 let token = localStorage.getItem('sb_token') || '';
 let secret = localStorage.getItem('sb_secret') || '';
 let deviceMap = JSON.parse(localStorage.getItem('sb_device_map') || '{}'); // roomNum -> deviceId
+let lastDetectedMap = JSON.parse(localStorage.getItem('sb_last_detected') || '{}'); // roomNum -> timestamp
 let devices = []; // SwitchBotのデバイス一覧
 let roomStatus = {}; // roomNum -> { occupied, lastTime, lastDetectedAt, deviceName }
 const OCCUPIED_MINUTES = 10; // 最終検知からX分以内は在室とみなす
@@ -457,53 +458,57 @@ async function loadDevices() {
 }
 
 async function refreshAll() {
-  showLoading('在室状況を更新中...');
-  let occupied = 0, vacant = 0, total = 0;
+  // Webhookサーバーから最新の検知時刻を取得
+  try {
+    const res = await fetch(`${PROXY}/switchbot/webhook/status`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.detections) {
+        for (const room of Object.keys(deviceMap)) {
+          const deviceId = deviceMap[room];
+          if (data.detections[deviceId]) {
+            const serverTs = data.detections[deviceId];
+            if (!lastDetectedMap[room] || serverTs > lastDetectedMap[room]) {
+              lastDetectedMap[room] = serverTs;
+            }
+          }
+        }
+        localStorage.setItem('sb_last_detected', JSON.stringify(lastDetectedMap));
+      }
+    }
+  } catch(e) {
+    console.warn('Webhook status取得失敗:', e.message);
+  }
 
+  // 表示を更新
   const allRooms = Object.values(ROOMS).flat();
-  total = allRooms.length;
+  const now = new Date();
+  let occupied = 0, vacant = 0;
 
   for (const room of allRooms) {
     const deviceId = deviceMap[room];
     if (!deviceId) continue;
-
-    try {
-      const res = await fetch(`${PROXY}/switchbot/device-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, secret, deviceId })
-      });
-      const data = await res.json();
-
-      if (data.statusCode === 100) {
-        const body = data.body;
-        // MotionSensor: moveDetected, PresenceSensor: moveDetected
-        const isOccupied = body.moveDetected === true || body.detected === true;
-        const deviceName = devices.find(d => d.deviceId === deviceId)?.deviceName || deviceId;
-        const now = new Date();
-        const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-        roomStatus[room] = { occupied: isOccupied, lastTime: timeStr, deviceName };
-        if (isOccupied) occupied++; else vacant++;
-      }
-    } catch (e) {
-      roomStatus[room] = { occupied: null, lastTime: null, deviceName: null };
-    }
+    const lastDetectedAt = lastDetectedMap[room] || null;
+    const isOccupied = lastDetectedAt !== null &&
+      (now.getTime() - lastDetectedAt) < OCCUPIED_MINUTES * 60 * 1000;
+    const lastTime = lastDetectedAt
+      ? (() => { const d = new Date(lastDetectedAt); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()
+      : null;
+    const deviceName = devices.find(d => d.deviceId === deviceId)?.deviceName || deviceId;
+    roomStatus[room] = { occupied: isOccupied, lastTime, lastDetectedAt, deviceName };
+    if (isOccupied) occupied++; else vacant++;
   }
 
-  // 再描画
   for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
-
   document.getElementById('occupiedCount').textContent = occupied;
   document.getElementById('vacantCount').textContent = vacant;
-  document.getElementById('totalCount').textContent = total;
-
-  const now = new Date();
+  document.getElementById('totalCount').textContent = allRooms.length;
+  const now2 = new Date();
   document.getElementById('lastUpdate').textContent =
-    `最終更新: ${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
+    `最終更新: ${now2.getFullYear()}/${now2.getMonth()+1}/${now2.getDate()} ${String(now2.getHours()).padStart(2,'0')}:${String(now2.getMinutes()).padStart(2,'0')}`;
   hideLoading();
 }
+
 
 // ===== 設定モーダル =====
 function openSettings() {
@@ -616,7 +621,7 @@ function setStatus(type, text) {
 // 30秒ごとに自動更新
 setInterval(() => {
   if (token && secret && Object.keys(deviceMap).length > 0) refreshAll();
-}, 30000);
+}, 10000);
 </script>
 </body>
 </html>
