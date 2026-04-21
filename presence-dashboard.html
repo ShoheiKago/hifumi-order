@@ -360,7 +360,8 @@ let token = localStorage.getItem('sb_token') || '';
 let secret = localStorage.getItem('sb_secret') || '';
 let deviceMap = JSON.parse(localStorage.getItem('sb_device_map') || '{}'); // roomNum -> deviceId
 let devices = []; // SwitchBotのデバイス一覧
-let roomStatus = {}; // roomNum -> { occupied, lastTime, deviceName }
+let roomStatus = {}; // roomNum -> { occupied, lastTime, lastDetectedAt, deviceName }
+const OCCUPIED_MINUTES = 10; // 最終検知からX分以内は在室とみなす
 
 // ===== 初期化 =====
 window.addEventListener('DOMContentLoaded', async () => {
