@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwitchBot 診断</title>
+<style>
+  body { font-family: monospace; background: #111; color: #eee; padding: 20px; font-size: 13px; }
+  h2 { color: #c9a84c; }
+  pre { background: #1a1a1a; padding: 12px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; color: #7fff7f; }
+  button { background: #4a8c5c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 13px; }
+  input { background: #222; color: #eee; border: 1px solid #444; padding: 8px; border-radius: 4px; width: 100%; margin-bottom: 8px; font-family: monospace; font-size: 12px; }
+  label { color: #aaa; font-size: 11px; display: block; margin-bottom: 2px; }
+  .section { margin-bottom: 20px; border: 1px solid #333; padding: 14px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h2>🔍 SwitchBot センサー診断</h2>
+
+<div class="section">
+  <label>APIトークン</label>
+  <input id="token" type="password" placeholder="トークン">
+  <label>シークレット</label>
+  <input id="secret" type="password" placeholder="シークレット">
+  <button onclick="loadFromStorage()">保存済みから読み込む</button>
+</div>
+
+<div class="section">
+  <button onclick="getDevices()">① デバイス一覧を取得</button>
+  <button onclick="getWebhookConfig()">② Webhook設定を確認</button>
+  <button onclick="setupWebhook()">③ Webhookを設定する</button>
+  <button onclick="getWebhookStatus()">④ Webhook受信状況を確認</button>
+</div>
+
+<div class="section">
+  <label>デバイスID（①の結果からコピーして貼り付け）</label>
+  <input id="deviceId" placeholder="デバイスID">
+  <button onclick="getStatus()">⑤ センサーステータスを取得</button>
+</div>
+
+<h2>結果</h2>
+<pre id="output">ボタンを押すと結果が表示されます</pre>
+
+<script>
+const PROXY = 'https://hifumi-order.onrender.com';
+
+function getToken() { return document.getElementById('token').value.trim(); }
+function getSecret() { return document.getElementById('secret').value.trim(); }
+
+function loadFromStorage() {
+  document.getElementById('token').value = localStorage.getItem('sb_token') || '';
+  document.getElementById('secret').value = localStorage.getItem('sb_secret') || '';
+  log('ローカルストレージから読み込みました');
+}
+
+function log(msg) {
+  document.getElementById('output').textContent = typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2);
+}
+
+async function getDevices() {
+  log('デバイス一覧を取得中...');
+  try {
+    const res = await fetch(`${PROXY}/switchbot/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: getToken(), secret: getSecret() })
+    });
+    const data = await res.json();
+    if (data.body && data.body.deviceList) {
+      const devices = data.body.deviceList.map(d => ({
+        名前: d.deviceName,
+        タイプ: d.deviceType,
+        ID: d.deviceId,
+        Hub: d.hubDeviceId
+      }));
+      log(JSON.stringify(devices, null, 2));
+    } else {
+      log(JSON.stringify(data, null, 2));
+    }
+  } catch(e) { log('エラー: ' + e.message); }
+}
+
+async function getStatus() {
+  const deviceId = document.getElementById('deviceId').value.trim();
+  if (!deviceId) { log('デバイスIDを入力してください'); return; }
+  log('ステータス取得中...');
+  try {
+    const res = await fetch(`${PROXY}/switchbot/device-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: getToken(), secret: getSecret(), deviceId })
+    });
+    const data = await res.json();
+    log(JSON.stringify(data, null, 2));
+  } catch(e) { log('エラー: ' + e.message); }
+}
+
+async function getWebhookConfig() {
+  log('Webhook設定を確認中...');
+  try {
+    const res = await fetch(`${PROXY}/switchbot/webhook/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: getToken(), secret: getSecret() })
+    });
+    const data = await res.json();
+    log(JSON.stringify(data, null, 2));
+  } catch(e) { log('エラー: ' + e.message); }
+}
+
+async function setupWebhook() {
+  const url = 'https://hifumi-order.onrender.com/switchbot/webhook/receive';
+  log('Webhookを設定中: ' + url);
+  try {
+    const res = await fetch(`${PROXY}/switchbot/webhook/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: getToken(), secret: getSecret(), url })
+    });
+    const data = await res.json();
+    log(JSON.stringify(data, null, 2));
+  } catch(e) { log('エラー: ' + e.message); }
+}
+
+async function getWebhookStatus() {
+  log('Webhook受信状況を確認中...');
+  try {
+    const res = await fetch(`${PROXY}/switchbot/webhook/status`);
+    const data = await res.json();
+    log(JSON.stringify(data, null, 2));
+  } catch(e) { log('エラー: ' + e.message); }
+}
+
+window.onload = loadFromStorage;
+</script>
+</body>
+</html>

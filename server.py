@@ -142,6 +142,24 @@ def switchbot_webhook_setup():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ===== SwitchBot Webhook query =====
+@app.route('/switchbot/webhook/query', methods=['POST'])
+def switchbot_webhook_query():
+    data = request.get_json()
+    token = data.get('token', '')
+    secret = data.get('secret', '')
+    if not token or not secret:
+        return jsonify({'error': 'token and secret required'}), 400
+    try:
+        r = requests.post(
+            'https://api.switch-bot.com/v1.1/webhook/queryWebhook',
+            headers=switchbot_headers(token, secret),
+            json={'action': 'queryUrl'}
+        )
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ===== SwitchBot Webhook 状態保持 =====
 # deviceId -> 最終検知タイムスタンプ（ミリ秒）
 detection_state = {}
