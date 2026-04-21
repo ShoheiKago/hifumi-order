@@ -44,11 +44,12 @@ def notify():
     total = data.get('total', 0)
     note = data.get('note', '')
 
-    msg = f"【飲料注文】\n部屋：{room}\n宿泊者：{guest} 様"
+    items_text = ', '.join([i['name'] + '×' + str(i['qty']) for i in items])
+    msg = '【飲料注文】\n部屋：' + room + '\n宿泊者：' + guest + ' 様'
     if items:
-        msg += f"\n注文：{', '.join([f\"{i['name']}×{i['qty']}\" for i in items])}\n合計：¥{total:,}"
+        msg += '\n注文：' + items_text + '\n合計：¥' + f'{total:,}'
     if note:
-        msg += f"\n📝 追記：{note}"
+        msg += '\n📝 追記：' + note
 
     try:
         requests.post(
