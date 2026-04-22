@@ -649,7 +649,7 @@ function setStatus(type, text) {
 // 30秒ごとに自動更新
 setInterval(() => {
   if (token && secret && Object.keys(deviceMap).length > 0) refreshAll();
-}, 10000);
+}, 300000);
 </script>
 </body>
 </html>
