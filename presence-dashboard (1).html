@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ひふみ旅館 在室ダッシュボード</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f8fc;
+    --white: #ffffff;
+    --border: #e8eaf0;
+    --border-light: #f0f2f8;
+    --text: #2d3142;
+    --text-dim: #8b90a7;
+    --text-light: #b0b5ca;
+    --green: #6bc8a0;
+    --green-bg: #edf8f3;
+    --green-border: #b8e8d4;
+    --gray-bg: #f2f3f7;
+    --blue: #7ba7e8;
+    --blue-bg: #eef3fd;
+    --peach: #f0a89a;
+    --peach-bg: #fef3f1;
+    --lavender: #a89ee8;
+    --lavender-bg: #f3f1fd;
+    --shadow-sm: 0 1px 4px rgba(45,49,66,0.06);
+    --shadow: 0 2px 12px rgba(45,49,66,0.08);
+    --shadow-lg: 0 8px 32px rgba(45,49,66,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  body { font-family: "Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-dot { width: 8px; height: 28px; background: linear-gradient(180deg, var(--green) 0%, var(--blue) 100%); border-radius: 4px; }
+  .header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .header-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .status-pill { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; font-size: 11px; color: var(--text-dim); transition: all 0.3s; }
+  .status-pill.connected { background: var(--green-bg); border-color: var(--green-border); color: #3a9e76; }
+  .status-pill.error { background: var(--peach-bg); border-color: #f5c4bc; color: #c0523e; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-light); transition: background 0.3s; flex-shrink: 0; }
+  .status-dot.connected { background: var(--green); }
+  .status-dot.error { background: var(--peach); }
+  .icon-btn { width: 34px; height: 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); color: var(--text-dim); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .icon-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+  .summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 20px 24px 0; max-width: 960px; margin: 0 auto; }
+  .summary-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); }
+  .summary-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .summary-icon.occupied { background: var(--green-bg); }
+  .summary-icon.vacant { background: var(--gray-bg); }
+  .summary-icon.total { background: var(--lavender-bg); }
+  .summary-num { font-size: 28px; font-weight: 700; line-height: 1; }
+  .summary-num.occupied { color: #3a9e76; }
+  .summary-num.vacant { color: var(--text-dim); }
+  .summary-num.total { color: var(--lavender); }
+  .summary-label { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+  .floors { padding: 20px 24px; max-width: 960px; margin: 0 auto; }
+  .floor-section { margin-bottom: 20px; }
+  .floor-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .floor-tag { font-size: 11px; font-weight: 700; color: var(--text-dim); background: var(--white); border: 1px solid var(--border); border-radius: 100px; padding: 3px 10px; letter-spacing: 0.05em; }
+  .floor-line { flex: 1; height: 1px; background: var(--border-light); }
+  .floor-count { font-size: 11px; color: var(--text-light); }
+  .room-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(110px,1fr)); gap: 8px; }
+  .room-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 10px 10px; cursor: default; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+  .room-card.occupied { background: var(--green-bg); border-color: var(--green-border); box-shadow: 0 2px 8px rgba(107,200,160,0.15); }
+  .room-card.vacant { background: var(--white); border-color: var(--border); }
+  .room-card.loading { background: var(--gray-bg); border-color: var(--border-light); opacity: 0.7; }
+  .room-card:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .room-num { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .room-card.occupied .room-num { color: #2a7a58; }
+  .room-status { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; }
+  .room-status.occupied { color: #3a9e76; }
+  .room-status.vacant { color: var(--text-light); }
+  .room-status.loading { color: var(--text-light); }
+  .room-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .room-status.occupied .room-dot { background: var(--green); }
+  .room-status.vacant .room-dot { background: var(--border); }
+  .room-status.loading .room-dot { background: var(--border); animation: pulse 1.4s infinite; }
+  .room-time { font-size: 9px; color: var(--text-light); margin-top: 4px; }
+  .room-card.occupied .room-time { color: #6bb89a; }
+  .room-device { font-size: 9px; color: var(--text-light); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(45,49,66,0.3); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 20px; }
+  .form-group { margin-bottom: 12px; }
+  .form-label { font-size: 11px; color: var(--text-dim); margin-bottom: 5px; display: block; font-weight: 600; }
+  .form-input { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); padding: 9px 12px; font-size: 12px; font-family: monospace; transition: border-color 0.15s; }
+  .form-input:focus { outline: none; border-color: var(--blue); background: var(--white); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+  .btn-primary { flex: 1; background: var(--green); color: white; border: none; border-radius: var(--radius-sm); padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-primary:hover { background: #5ab88e; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--bg); border: 1.5px solid var(--border); color: var(--text-dim); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+  .btn-webhook { background: var(--lavender-bg); border: 1.5px solid #ccc9f0; color: var(--lavender); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+  .btn-webhook:hover { background: #ebe9fb; }
+  .assign-section { margin-top: 16px; }
+  .assign-title { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 600; }
+  .assign-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .assign-room { width: 64px; font-size: 12px; color: var(--text); font-weight: 600; flex-shrink: 0; }
+  .assign-select { flex: 1; background: var(--bg); border: 1.5px solid var(--border); border-radius: 6px; color: var(--text); padding: 6px 8px; font-size: 11px; }
+  .assign-select:focus { outline: none; border-color: var(--blue); }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(247,248,252,0.9); backdrop-filter: blur(4px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .loading-text { font-size: 13px; color: var(--text-dim); }
+  .last-update { text-align: center; font-size: 11px; color: var(--text-light); padding: 16px 24px 24px; }
+  #webhookStatus { font-size: 11px; margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--bg); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @media (max-width: 480px) {
+    .header { padding: 0 16px; }
+    .summary { padding: 16px 16px 0; gap: 8px; }
+    .floors { padding: 16px; }
+    .room-grid { grid-template-columns: repeat(auto-fill,minmax(90px,1fr)); gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">SwitchBot APIに接続中...</div>
+</div>
+<div class="header">
+  <div class="header-left">
+    <div class="header-dot"></div>
+    <div>
+      <div class="header-title">ひふみ旅館</div>
+      <div class="header-sub">在室ダッシュボード</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">接続中...</span>
+    </div>
+    <button class="icon-btn" onclick="refreshAll()" title="更新">↻</button>
+    <button class="icon-btn" onclick="openSettings()" title="設定">⚙</button>
+  </div>
+</div>
+<div class="summary">
+  <div class="summary-card">
+    <div class="summary-icon occupied">🟢</div>
+    <div><div class="summary-num occupied" id="occupiedCount">-</div><div class="summary-label">在室</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon vacant">⚪</div>
+    <div><div class="summary-num vacant" id="vacantCount">-</div><div class="summary-label">退室</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon total">🏠</div>
+    <div><div class="summary-num total" id="totalCount">-</div><div class="summary-label">総部屋数</div></div>
+  </div>
+</div>
+<div class="floors" id="floorsContainer"></div>
+<div class="last-update" id="lastUpdate"></div>
+<div class="modal-overlay" id="settingsModal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">設定</div>
+    <div class="modal-sub">SwitchBot APIの接続とセンサー割り当てを設定します</div>
+    <div class="form-group">
+      <label class="form-label">APIトークン</label>
+      <input class="form-input" id="inputToken" placeholder="トークンを入力..." type="password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">クライアントシークレット</label>
+      <input class="form-input" id="inputSecret" placeholder="シークレットを入力..." type="password">
+    </div>
+    <div class="assign-section" id="assignSection" style="display:none">
+      <div class="assign-title">センサーを部屋に割り当て</div>
+      <div id="assignRows"></div>
+    </div>
+    <div id="webhookStatus" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSettings()">閉じる</button>
+      <button class="btn-webhook" onclick="setupWebhook()">Webhook設定</button>
+      <button class="btn-primary" id="connectBtn" onclick="connectApi()">接続して取得</button>
+    </div>
+  </div>
+</div>
+<script>
+const PROXY = 'https://hifumi-order.onrender.com';
+const ROOMS = {
+  '2F': ['201','202','203','205','206','207','208','209','210','211','212'],
+  '3F': ['301','302','303','305','306','307','308','309','310','311','312','313'],
+  '4F': ['401','402'],
+  '共用': ['男子浴場','女子浴場'],
+};
+let token = localStorage.getItem('sb_token') || '';
+let secret = localStorage.getItem('sb_secret') || '';
+let deviceMap = JSON.parse(localStorage.getItem('sb_device_map') || '{}');
+let lastDetectedMap = JSON.parse(localStorage.getItem('sb_last_detected') || '{}');
+let devices = [];
+let roomStatus = {};
+const OCCUPIED_MINUTES = 10;
+
+window.addEventListener('DOMContentLoaded', async () => {
+  renderFloors();
+  if (!token || !secret) { hideLoading(); openSettings(); return; }
+  await loadDevices();
+});
+
+function renderFloors() {
+  const container = document.getElementById('floorsContainer');
+  container.innerHTML = '';
+  for (const [floor, rooms] of Object.entries(ROOMS)) {
+    const section = document.createElement('div');
+    section.className = 'floor-section';
+    section.innerHTML = '<div class="floor-header"><div class="floor-tag">' + floor + '</div><div class="floor-line"></div><div class="floor-count">' + rooms.length + '室</div></div><div class="room-grid" id="grid-' + floor + '"></div>';
+    container.appendChild(section);
+    renderRooms(floor, rooms);
+  }
+}
+
+function renderRooms(floor, rooms) {
+  const grid = document.getElementById('grid-' + floor);
+  grid.innerHTML = '';
+  rooms.forEach(room => {
+    const status = roomStatus[room] || { occupied: null, lastTime: null, deviceName: null };
+    const hasDevice = !!deviceMap[room];
+    const statusClass = !hasDevice ? 'loading' : (status.occupied === null ? 'loading' : (status.occupied ? 'occupied' : 'vacant'));
+    const statusText = !hasDevice ? 'センサー未設定' : (status.occupied === null ? '取得中...' : (status.occupied ? '在室' : '退室'));
+    grid.innerHTML += '<div class="room-card ' + statusClass + '" id="card-' + room + '"><div class="room-num">' + room + '</div><div class="room-status ' + statusClass + '"><div class="room-dot"></div>' + statusText + '</div>' + (status.lastTime ? '<div class="room-time">検知 ' + status.lastTime + '</div>' : '') + (status.deviceName ? '<div class="room-device">' + status.deviceName + '</div>' : '') + '</div>';
+  });
+}
+
+async function loadDevices() {
+  showLoading('デバイス一覧を取得中...');
+  try {
+    const res = await fetch(PROXY + '/switchbot/devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, secret }) });
+    const data = await res.json();
+    if (data.statusCode === 100) {
+      devices = data.body.deviceList || [];
+      setStatus('connected', devices.length + '台のデバイスを検出');
+      const sensors = devices.filter(d => d.deviceType?.toLowerCase().includes('motion') || d.deviceType?.toLowerCase().includes('presence'));
+      if (sensors.length > 0) { await refreshAll(); } else { hideLoading(); openSettings(); }
+    } else { setStatus('error', 'API認証エラー'); hideLoading(); openSettings(); }
+  } catch (e) { setStatus('error', '接続失敗'); hideLoading(); openSettings(); }
+}
+
+async function refreshAll() {
+  try {
+    const res = await fetch(PROXY + '/switchbot/webhook/status');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.detections) {
+        for (const room of Object.keys(deviceMap)) {
+          const deviceId = deviceMap[room];
+          if (data.detections[deviceId]) {
+            const serverTs = data.detections[deviceId];
+            if (!lastDetectedMap[room] || serverTs > lastDetectedMap[room]) lastDetectedMap[room] = serverTs;
+          }
+        }
+        localStorage.setItem('sb_last_detected', JSON.stringify(lastDetectedMap));
+      }
+    }
+  } catch(e) { console.warn('Webhook status取得失敗:', e.message); }
+  const allRooms = Object.values(ROOMS).flat();
+  const now = new Date();
+  let occupied = 0, vacant = 0;
+  for (const room of allRooms) {
+    const deviceId = deviceMap[room];
+    if (!deviceId) continue;
+    const lastDetectedAt = lastDetectedMap[room] || null;
+    const isOccupied = lastDetectedAt !== null && (now.getTime() - lastDetectedAt) < OCCUPIED_MINUTES * 60 * 1000;
+    const lastTime = lastDetectedAt ? (() => { const d = new Date(lastDetectedAt); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); })() : null;
+    const deviceName = devices.find(d => d.deviceId === deviceId)?.deviceName || deviceId;
+    roomStatus[room] = { occupied: isOccupied, lastTime, lastDetectedAt, deviceName };
+    if (isOccupied) occupied++; else vacant++;
+  }
+  for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
+  document.getElementById('occupiedCount').textContent = occupied;
+  document.getElementById('vacantCount').textContent = vacant;
+  document.getElementById('totalCount').textContent = allRooms.length;
+  const now2 = new Date();
+  document.getElementById('lastUpdate').textContent = '最終更新: ' + now2.getFullYear() + '/' + (now2.getMonth()+1) + '/' + now2.getDate() + ' ' + String(now2.getHours()).padStart(2,'0') + ':' + String(now2.getMinutes()).padStart(2,'0');
+  hideLoading();
+}
+
+function openSettings() {
+  document.getElementById('inputToken').value = token;
+  document.getElementById('inputSecret').value = secret;
+  if (devices.length > 0) renderAssignSection();
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+async function setupWebhook() {
+  const webhookUrl = 'https://hifumi-order.onrender.com/switchbot/webhook/receive';
+  const statusEl = document.getElementById('webhookStatus');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--text-dim)';
+  statusEl.textContent = 'Webhook設定中...';
+  try {
+    const res = await fetch(PROXY + '/switchbot/webhook/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, secret, url: webhookUrl }) });
+    const data = await res.json();
+    if (data.statusCode === 100 || data.statusCode === 151) { statusEl.style.color = '#3a9e76'; statusEl.textContent = '✓ Webhook設定完了'; }
+    else { statusEl.style.color = '#c0523e'; statusEl.textContent = 'エラー: ' + JSON.stringify(data); }
+  } catch(e) { statusEl.style.color = '#c0523e'; statusEl.textContent = '接続失敗: ' + e.message; }
+}
+
+function renderAssignSection() {
+  const section = document.getElementById('assignSection');
+  const rows = document.getElementById('assignRows');
+  section.style.display = 'block';
+  const sensors = devices.filter(d => d.deviceType?.toLowerCase().includes('motion') || d.deviceType?.toLowerCase().includes('presence'));
+  if (sensors.length === 0) { section.style.display = 'none'; return; }
+  const allRooms = Object.values(ROOMS).flat();
+  rows.innerHTML = allRooms.map(room => '<div class="assign-row"><div class="assign-room">' + room + '</div><select class="assign-select" id="assign-' + room + '"><option value="">未設定</option>' + sensors.map(s => '<option value="' + s.deviceId + '"' + (deviceMap[room] === s.deviceId ? ' selected' : '') + '>' + s.deviceName + '</option>').join('') + '</select></div>').join('');
+}
+
+async function connectApi() {
+  const t = document.getElementById('inputToken').value.trim();
+  const s = document.getElementById('inputSecret').value.trim();
+  if (!t || !s) { alert('トークンとシークレットを入力してください'); return; }
+  token = t; secret = s;
+  localStorage.setItem('sb_token', token); localStorage.setItem('sb_secret', secret);
+  document.getElementById('connectBtn').textContent = '接続中...';
+  document.getElementById('connectBtn').disabled = true;
+  try {
+    const res = await fetch(PROXY + '/switchbot/devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, secret }) });
+    const data = await res.json();
+    if (data.statusCode === 100) {
+      devices = data.body.deviceList || [];
+      setStatus('connected', devices.length + '台のデバイスを検出');
+      renderAssignSection();
+      document.getElementById('connectBtn').textContent = '割り当てを保存';
+      document.getElementById('connectBtn').onclick = saveAssignment;
+    } else { alert('API認証に失敗しました。'); }
+  } catch (e) { alert('接続に失敗しました: ' + e.message); }
+  document.getElementById('connectBtn').disabled = false;
+}
+
+function saveAssignment() {
+  const allRooms = Object.values(ROOMS).flat();
+  allRooms.forEach(room => {
+    const sel = document.getElementById('assign-' + room);
+    if (sel) { if (sel.value) deviceMap[room] = sel.value; else delete deviceMap[room]; }
+  });
+  localStorage.setItem('sb_device_map', JSON.stringify(deviceMap));
+  closeSettings(); refreshAll();
+}
+
+function showLoading(text) { document.getElementById('loadingText').textContent = text || '読み込み中...'; document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+function setStatus(type, text) {
+  document.getElementById('statusDot').className = 'status-dot ' + type;
+  document.getElementById('statusPill').className = 'status-pill ' + type;
+  document.getElementById('statusText').textContent = text;
+}
+setInterval(() => { if (token && secret && Object.keys(deviceMap).length > 0) refreshAll(); }, 300000);
+</script>
+</body>
+</html>
