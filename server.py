@@ -163,8 +163,12 @@ def set_device_map():
 @app.route('/shared/futon', methods=['GET'])
 def get_futon():
     today = datetime.date.today().isoformat()
-    # 翌日自動クリア
-    current = {k: v for k, v in futon_done.items() if v == today}
+    # 翌日自動クリア（dateフィールドで判定）
+    current = {}
+    for k, v in futon_done.items():
+        d = v.get('date') if isinstance(v, dict) else v
+        if d == today:
+            current[k] = v
     futon_done.clear()
     futon_done.update(current)
     return jsonify({'futon': futon_done, 'date': today})
@@ -174,8 +178,9 @@ def set_futon():
     data = request.get_json()
     room = data.get('room', '')
     today = datetime.date.today().isoformat()
+    time_str = data.get('time', '')
     if room:
-        futon_done[room] = today
+        futon_done[room] = {'date': today, 'time': time_str}
     return jsonify({'success': True, 'futon': futon_done})
 
 @app.route('/shared/futon/clear', methods=['POST'])
@@ -184,6 +189,42 @@ def clear_futon():
     room = data.get('room', '')
     if room and room in futon_done:
         del futon_done[room]
+    return jsonify({'success': True})
+
+
+# ===== リネン装着状態（翌日分） =====
+linen_done = {}  # roomNum -> {date, time}
+
+@app.route('/shared/linen', methods=['GET'])
+def get_linen():
+    today = datetime.date.today().isoformat()
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    # 今日・明日どちらの日付でも保持（前日登録→当日も表示）
+    current = {}
+    for k, v in linen_done.items():
+        d = v.get('date') if isinstance(v, dict) else v
+        if d == today or d == tomorrow:
+            current[k] = v
+    linen_done.clear()
+    linen_done.update(current)
+    return jsonify({'linen': linen_done, 'date': tomorrow})
+
+@app.route('/shared/linen', methods=['POST'])
+def set_linen():
+    data = request.get_json()
+    room = data.get('room', '')
+    time_str = data.get('time', '')
+    date_str = data.get('date', (datetime.date.today() + datetime.timedelta(days=1)).isoformat())
+    if room:
+        linen_done[room] = {'date': date_str, 'time': time_str}
+    return jsonify({'success': True, 'linen': linen_done})
+
+@app.route('/shared/linen/clear', methods=['POST'])
+def clear_linen():
+    data = request.get_json()
+    room = data.get('room', '')
+    if room and room in linen_done:
+        del linen_done[room]
     return jsonify({'success': True})
 
 # ===== SwitchBot Webhook query =====

@@ -133,6 +133,22 @@
     border-color: #f0d080;
   }
   .room-card.futon-done .room-num { color: #a07820; }
+
+  .linen-section { max-width: 960px; margin: 0 auto 20px; padding: 0 24px; }
+  .linen-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .linen-tag { font-size: 11px; font-weight: 700; color: #a07820; background: #fff8ee; border: 1px solid #f0d080; border-radius: 100px; padding: 3px 10px; letter-spacing: 0.05em; }
+  .linen-line { flex: 1; height: 1px; background: #f0e8d0; }
+  .linen-count { font-size: 11px; color: var(--text-light); }
+  .linen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+  .linen-card { background: #fffdf7; border: 1.5px solid #f0d080; border-radius: var(--radius-sm); padding: 12px 10px 10px; box-shadow: var(--shadow-sm); transition: all 0.2s; }
+  .linen-card:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .linen-card.linen-complete { background: #fff8ee; border-color: #e8b840; }
+  .linen-num { font-size: 16px; font-weight: 700; color: #a07820; margin-bottom: 6px; }
+  .linen-guest { font-size: 10px; color: var(--text-dim); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .linen-btn { width: 100%; padding: 4px 0; font-size: 10px; font-weight: 600; border-radius: 5px; border: 1px solid #f0d080; background: white; color: #a07820; cursor: pointer; transition: all 0.15s; }
+  .linen-btn:hover { background: #fff8ee; }
+  .linen-done { width: 100%; padding: 4px 0; font-size: 10px; font-weight: 600; border-radius: 5px; border: 1px solid #e8b840; background: #fff3d0; color: #a07820; text-align: center; cursor: pointer; }
+  .linen-empty { background: #f7f8fc; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 20px; text-align: center; font-size: 12px; color: var(--text-light); }
   .room-guests { font-size: 9px; color: var(--blue); margin-top: 2px; font-weight: 600; }
   @media (max-width: 480px) {
     .header { padding: 0 16px; }
@@ -182,6 +198,17 @@
     <div><div class="summary-num" style="color:var(--blue);" id="guestTotalCount">-</div><div class="summary-label">チェックイン人数</div></div>
   </div>
 </div>
+
+<!-- 翌日リネンセクション -->
+<div class="linen-section" id="linenSection" style="display:none">
+  <div class="linen-header">
+    <div class="linen-tag">🛏 翌日リネン</div>
+    <div class="linen-line"></div>
+    <div class="linen-count" id="linenCount"></div>
+  </div>
+  <div class="linen-grid" id="linenGrid"></div>
+</div>
+
 <div class="floors" id="floorsContainer"></div>
 <div class="last-update" id="lastUpdate"></div>
 <div class="modal-overlay" id="settingsModal" style="display:none">
@@ -224,6 +251,8 @@ let devices = [];
 let roomStatus = {};
 let futonDone = {};
 let guestMap = {};
+let linenDone = {};
+let tomorrowGuests = [];
 const OCCUPIED_MINUTES = 10;
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -259,8 +288,9 @@ function renderRooms(floor, rooms) {
     const isFutonDone = !!futonDone[room];
     const extraClass = isFutonDone ? ' futon-done' : '';
     const showFuton = !NO_FUTON_ROOMS.includes(room);
+    const futonTime = isFutonDone && futonDone[room].time ? ' ' + futonDone[room].time : '';
     const futonHtml = !showFuton ? '' : (isFutonDone
-      ? '<div class="room-futon-done" onclick="toggleFuton(\'' + room + '\')" style="cursor:pointer;">✓ 布団敷き完了</div>'
+      ? '<div class="room-futon-done" onclick="toggleFuton(\'' + room + '\')" style="cursor:pointer;">✓ 布団敷き完了' + futonTime + '</div>'
       : '<button class="room-futon-btn" onclick="toggleFuton(\'' + room + '\')">布団敷き</button>');
     const guestHtml = guestMap[room] ? '<div class="room-guests">👥 ' + guestMap[room] + '名</div>' : '';
     grid.innerHTML += '<div class="room-card ' + sc + extraClass + '" id="card-' + room + '">' +
@@ -276,17 +306,20 @@ function renderRooms(floor, rooms) {
 
 async function loadSharedData() {
   try {
-    const [resMap, resFuton] = await Promise.all([
+    const [resMap, resFuton, resLinen] = await Promise.all([
       fetch(PROXY + '/shared/device-map'),
-      fetch(PROXY + '/shared/futon')
+      fetch(PROXY + '/shared/futon'),
+      fetch(PROXY + '/shared/linen')
     ]);
     const mapData = await resMap.json();
     const futonData = await resFuton.json();
+    const linenData = await resLinen.json();
     if (mapData.deviceMap && Object.keys(mapData.deviceMap).length > 0) {
       deviceMap = mapData.deviceMap;
       localStorage.setItem('sb_device_map', JSON.stringify(deviceMap));
     }
     futonDone = futonData.futon || {};
+    linenDone = linenData.linen || {};
     renderFloors();
   } catch(e) { console.warn('共有データ取得失敗:', e.message); }
 }
@@ -301,11 +334,14 @@ async function toggleFuton(room) {
       });
       delete futonDone[room];
     } else {
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const dateStr = now.toISOString().slice(0,10);
       await fetch(PROXY + '/shared/futon', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({room})
+        body: JSON.stringify({room, time: timeStr, date: dateStr})
       });
-      futonDone[room] = new Date().toISOString().slice(0,10);
+      futonDone[room] = { date: dateStr, time: timeStr };
     }
     for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
   } catch(e) { alert('更新に失敗しました: ' + e.message); }
@@ -339,6 +375,95 @@ async function loadGuestCounts() {
   } catch(e) { console.warn('チェックイン人数取得失敗:', e.message); }
 }
 
+
+async function loadTomorrowGuests() {
+  try {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+    // 今日・明日の両方を取得（リネン作業は前日〜当日まで表示）
+    const [resRsvToday, resRsvTomorrow, resRooms] = await Promise.all([
+      fetch(PROXY + '/staysee/reservations?search_type=stay_date&date=' + fmt(today) + '&children=allocate_rooms'),
+      fetch(PROXY + '/staysee/reservations?search_type=stay_date&date=' + fmt(tomorrow) + '&children=allocate_rooms'),
+      fetch(PROXY + '/staysee/rooms')
+    ]);
+    const dataRsvToday = await resRsvToday.json();
+    const dataRsvTomorrow = await resRsvTomorrow.json();
+    const dataRooms = await resRooms.json();
+
+    const roomNameMap = {};
+    (dataRooms.rooms || []).forEach(r => { roomNameMap[r.id] = r.name; });
+
+    // 翌日チェックイン予定（status=2）のみ対象
+    const seenRooms = new Set();
+    tomorrowGuests = [];
+
+    const addGuests = (reservations) => {
+      reservations.filter(r => r.status === 2).forEach(rsv => {
+        const guestName = rsv.name_kanji || rsv.name_kana || rsv.name || '';
+        (rsv.room_allocations || []).forEach(alloc => {
+          const rname = roomNameMap[alloc.room_id] || String(alloc.room_id);
+          if (!seenRooms.has(rname)) {
+            seenRooms.add(rname);
+            tomorrowGuests.push({ room: rname, name: guestName });
+          }
+        });
+      });
+    };
+
+    addGuests(dataRsvToday.reservations || []);
+    addGuests(dataRsvTomorrow.reservations || []);
+
+    tomorrowGuests.sort((a, b) => (parseInt(a.room) || 9999) - (parseInt(b.room) || 9999));
+    renderLinenSection();
+  } catch(e) { console.warn('翌日予約取得失敗:', e.message); }
+}
+
+function renderLinenSection() {
+  const section = document.getElementById('linenSection');
+  const grid = document.getElementById('linenGrid');
+  const countEl = document.getElementById('linenCount');
+  if (tomorrowGuests.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  countEl.textContent = '翌日チェックイン ' + tomorrowGuests.length + '室';
+  grid.innerHTML = tomorrowGuests.map(g => {
+    const isDone = !!linenDone[g.room];
+    const timeStr = isDone && linenDone[g.room].time ? ' ' + linenDone[g.room].time : '';
+    return '<div class="linen-card' + (isDone ? ' linen-complete' : '') + '">' +
+      '<div class="linen-num">' + g.room + '</div>' +
+      (g.name ? '<div class="linen-guest">' + g.name + ' 様</div>' : '') +
+      (isDone
+        ? '<div class="linen-done" onclick="toggleLinen(\'' + g.room + '\')">✓ リネン完了' + timeStr + '</div>'
+        : '<button class="linen-btn" onclick="toggleLinen(\'' + g.room + '\')">リネン装着</button>'
+      ) + '</div>';
+  }).join('');
+}
+
+async function toggleLinen(room) {
+  const isDone = !!linenDone[room];
+  try {
+    if (isDone) {
+      await fetch(PROXY + '/shared/linen/clear', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({room})
+      });
+      delete linenDone[room];
+    } else {
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const dateStr = now.toISOString().slice(0,10);
+      await fetch(PROXY + '/shared/linen', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({room, time: timeStr, date: dateStr})
+      });
+      linenDone[room] = { date: dateStr, time: timeStr };
+    }
+    renderLinenSection();
+  } catch(e) { alert('更新に失敗しました: ' + e.message); }
+}
+
 async function loadDevices() {
   showLoading('デバイス一覧を取得中...');
   try {
@@ -350,6 +475,7 @@ async function loadDevices() {
       const sensors = devices.filter(d => d.deviceType?.toLowerCase().includes('motion') || d.deviceType?.toLowerCase().includes('presence'));
       if (sensors.length > 0) { await refreshAll(); } else { hideLoading(); openSettings(); }
       await loadGuestCounts();
+      await loadTomorrowGuests();
     } else { setStatus('error', 'API認証エラー'); hideLoading(); openSettings(); }
   } catch (e) { setStatus('error', '接続失敗'); hideLoading(); openSettings(); }
 }
