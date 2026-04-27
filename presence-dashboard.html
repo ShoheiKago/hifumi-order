@@ -127,6 +127,12 @@
     border: 1px solid var(--green-border); background: var(--green-bg);
     color: #3a9e76; text-align: center;
   }
+
+  .room-card.futon-done {
+    background: #fff8ee;
+    border-color: #f0d080;
+  }
+  .room-card.futon-done .room-num { color: #a07820; }
   .room-guests { font-size: 9px; color: var(--blue); margin-top: 2px; font-weight: 600; }
   @media (max-width: 480px) {
     .header { padding: 0 16px; }
@@ -243,16 +249,21 @@ function renderRooms(floor, rooms) {
   const grid = document.getElementById('grid-' + floor);
   if (!grid) return;
   grid.innerHTML = '';
+  // 浴場系はボタンなし
+  const NO_FUTON_ROOMS = ['男子浴場', '女子浴場'];
   rooms.forEach(room => {
     const s = roomStatus[room] || {};
     const hasDevice = !!deviceMap[room];
     const sc = !hasDevice ? 'loading' : (s.occupied === null ? 'loading' : (s.occupied ? 'occupied' : 'vacant'));
     const st = !hasDevice ? 'センサー未設定' : (s.occupied === null ? '取得中...' : (s.occupied ? '在室' : '退室'));
-    const futonHtml = futonDone[room]
-      ? '<div class="room-futon-done">✓ 布団式完了</div>'
-      : '<button class="room-futon-btn" onclick="toggleFuton(\'' + room + '\')">布団式</button>';
+    const isFutonDone = !!futonDone[room];
+    const extraClass = isFutonDone ? ' futon-done' : '';
+    const showFuton = !NO_FUTON_ROOMS.includes(room);
+    const futonHtml = !showFuton ? '' : (isFutonDone
+      ? '<div class="room-futon-done" onclick="toggleFuton(\'' + room + '\')" style="cursor:pointer;">✓ 布団敷き完了</div>'
+      : '<button class="room-futon-btn" onclick="toggleFuton(\'' + room + '\')">布団敷き</button>');
     const guestHtml = guestMap[room] ? '<div class="room-guests">👥 ' + guestMap[room] + '名</div>' : '';
-    grid.innerHTML += '<div class="room-card ' + sc + '" id="card-' + room + '">' +
+    grid.innerHTML += '<div class="room-card ' + sc + extraClass + '" id="card-' + room + '">' +
       '<div class="room-num">' + room + '</div>' +
       guestHtml +
       '<div class="room-status ' + sc + '"><div class="room-dot"></div>' + st + '</div>' +
