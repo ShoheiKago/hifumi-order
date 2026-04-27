@@ -48,7 +48,7 @@
   .refresh-big-btn { height: 34px; padding: 0 16px; border: 1px solid var(--green-border); border-radius: var(--radius-sm); background: var(--green-bg); color: #3a9e76; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
   .refresh-big-btn:hover { background: var(--green); color: white; border-color: var(--green); }
   .refresh-big-btn.loading { opacity: 0.6; cursor: not-allowed; }
-  .summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 20px 24px 0; max-width: 960px; margin: 0 auto; }
+  .summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 20px 24px 0; max-width: 960px; margin: 0 auto; }
   .summary-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); }
   .summary-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
   .summary-icon.occupied { background: var(--green-bg); }
@@ -113,6 +113,21 @@
   #webhookStatus { font-size: 11px; margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--bg); }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .room-futon-btn {
+    margin-top: 6px; width: 100%; padding: 4px 0;
+    font-size: 10px; font-weight: 600; border-radius: 5px;
+    border: 1px solid var(--border); background: var(--white);
+    color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+  }
+  .room-futon-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .room-futon-done {
+    margin-top: 6px; width: 100%; padding: 4px 0;
+    font-size: 10px; font-weight: 600; border-radius: 5px;
+    border: 1px solid var(--green-border); background: var(--green-bg);
+    color: #3a9e76; text-align: center;
+  }
+  .room-guests { font-size: 9px; color: var(--blue); margin-top: 2px; font-weight: 600; }
   @media (max-width: 480px) {
     .header { padding: 0 16px; }
     .summary { padding: 16px 16px 0; gap: 8px; }
@@ -156,6 +171,10 @@
     <div class="summary-icon total">🏠</div>
     <div><div class="summary-num total" id="totalCount">-</div><div class="summary-label">総部屋数</div></div>
   </div>
+  <div class="summary-card">
+    <div class="summary-icon" style="background:var(--blue-bg);">👥</div>
+    <div><div class="summary-num" style="color:var(--blue);" id="guestTotalCount">-</div><div class="summary-label">チェックイン人数</div></div>
+  </div>
 </div>
 <div class="floors" id="floorsContainer"></div>
 <div class="last-update" id="lastUpdate"></div>
@@ -197,10 +216,13 @@ let deviceMap = JSON.parse(localStorage.getItem('sb_device_map') || '{}');
 let lastDetectedMap = JSON.parse(localStorage.getItem('sb_last_detected') || '{}');
 let devices = [];
 let roomStatus = {};
+let futonDone = {};
+let guestMap = {};
 const OCCUPIED_MINUTES = 10;
 
 window.addEventListener('DOMContentLoaded', async () => {
   renderFloors();
+  await loadSharedData();
   if (!token || !secret) { hideLoading(); openSettings(); return; }
   await loadDevices();
 });
@@ -219,14 +241,91 @@ function renderFloors() {
 
 function renderRooms(floor, rooms) {
   const grid = document.getElementById('grid-' + floor);
+  if (!grid) return;
   grid.innerHTML = '';
   rooms.forEach(room => {
-    const status = roomStatus[room] || { occupied: null, lastTime: null, deviceName: null };
+    const s = roomStatus[room] || {};
     const hasDevice = !!deviceMap[room];
-    const statusClass = !hasDevice ? 'loading' : (status.occupied === null ? 'loading' : (status.occupied ? 'occupied' : 'vacant'));
-    const statusText = !hasDevice ? 'センサー未設定' : (status.occupied === null ? '取得中...' : (status.occupied ? '在室' : '退室'));
-    grid.innerHTML += '<div class="room-card ' + statusClass + '" id="card-' + room + '"><div class="room-num">' + room + '</div><div class="room-status ' + statusClass + '"><div class="room-dot"></div>' + statusText + '</div>' + (status.lastTime ? '<div class="room-time">検知 ' + status.lastTime + '</div>' : '') + (status.deviceName ? '<div class="room-device">' + status.deviceName + '</div>' : '') + '</div>';
+    const sc = !hasDevice ? 'loading' : (s.occupied === null ? 'loading' : (s.occupied ? 'occupied' : 'vacant'));
+    const st = !hasDevice ? 'センサー未設定' : (s.occupied === null ? '取得中...' : (s.occupied ? '在室' : '退室'));
+    const futonHtml = futonDone[room]
+      ? '<div class="room-futon-done">✓ 布団式完了</div>'
+      : '<button class="room-futon-btn" onclick="toggleFuton(\'' + room + '\')">布団式</button>';
+    const guestHtml = guestMap[room] ? '<div class="room-guests">👥 ' + guestMap[room] + '名</div>' : '';
+    grid.innerHTML += '<div class="room-card ' + sc + '" id="card-' + room + '">' +
+      '<div class="room-num">' + room + '</div>' +
+      guestHtml +
+      '<div class="room-status ' + sc + '"><div class="room-dot"></div>' + st + '</div>' +
+      (s.lastTime ? '<div class="room-time">検知 ' + s.lastTime + '</div>' : '') +
+      futonHtml +
+      '</div>';
   });
+}
+
+
+async function loadSharedData() {
+  try {
+    const [resMap, resFuton] = await Promise.all([
+      fetch(PROXY + '/shared/device-map'),
+      fetch(PROXY + '/shared/futon')
+    ]);
+    const mapData = await resMap.json();
+    const futonData = await resFuton.json();
+    if (mapData.deviceMap && Object.keys(mapData.deviceMap).length > 0) {
+      deviceMap = mapData.deviceMap;
+      localStorage.setItem('sb_device_map', JSON.stringify(deviceMap));
+    }
+    futonDone = futonData.futon || {};
+    renderFloors();
+  } catch(e) { console.warn('共有データ取得失敗:', e.message); }
+}
+
+async function toggleFuton(room) {
+  const isDone = !!futonDone[room];
+  try {
+    if (isDone) {
+      await fetch(PROXY + '/shared/futon/clear', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({room})
+      });
+      delete futonDone[room];
+    } else {
+      await fetch(PROXY + '/shared/futon', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({room})
+      });
+      futonDone[room] = new Date().toISOString().slice(0,10);
+    }
+    for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
+  } catch(e) { alert('更新に失敗しました: ' + e.message); }
+}
+
+async function loadGuestCounts() {
+  try {
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const [resRsv, resRooms] = await Promise.all([
+      fetch(PROXY + '/staysee/reservations?search_type=stay_date&date=' + dateStr + '&children=allocate_rooms'),
+      fetch(PROXY + '/staysee/rooms')
+    ]);
+    const dataRsv = await resRsv.json();
+    const dataRooms = await resRooms.json();
+    const roomNameMap = {};
+    (dataRooms.rooms || []).forEach(r => { roomNameMap[r.id] = r.name; });
+    guestMap = {};
+    let totalGuests = 0;
+    const reservations = (dataRsv.reservations || []).filter(r => r.status === 5 || r.status === 2);
+    reservations.forEach(rsv => {
+      const cnt = Number(rsv.number_of_guests || rsv.guests || 1);
+      (rsv.room_allocations || []).forEach(alloc => {
+        const rname = roomNameMap[alloc.room_id] || String(alloc.room_id);
+        guestMap[rname] = (guestMap[rname] || 0) + cnt;
+        totalGuests += cnt;
+      });
+    });
+    document.getElementById('guestTotalCount').textContent = totalGuests;
+    for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
+  } catch(e) { console.warn('チェックイン人数取得失敗:', e.message); }
 }
 
 async function loadDevices() {
@@ -239,6 +338,7 @@ async function loadDevices() {
       setStatus('connected', devices.length + '台のデバイスを検出');
       const sensors = devices.filter(d => d.deviceType?.toLowerCase().includes('motion') || d.deviceType?.toLowerCase().includes('presence'));
       if (sensors.length > 0) { await refreshAll(); } else { hideLoading(); openSettings(); }
+      await loadGuestCounts();
     } else { setStatus('error', 'API認証エラー'); hideLoading(); openSettings(); }
   } catch (e) { setStatus('error', '接続失敗'); hideLoading(); openSettings(); }
 }
@@ -349,6 +449,10 @@ function saveAssignment() {
     if (sel) { if (sel.value) deviceMap[room] = sel.value; else delete deviceMap[room]; }
   });
   localStorage.setItem('sb_device_map', JSON.stringify(deviceMap));
+  fetch(PROXY + '/shared/device-map', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({deviceMap})
+  }).catch(e => console.warn('共有保存失敗:', e));
   closeSettings(); refreshAll();
 }
 

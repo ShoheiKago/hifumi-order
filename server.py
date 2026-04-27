@@ -142,6 +142,50 @@ def switchbot_webhook_setup():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# ===== 共有設定（デバイスマップ・布団式完了状態） =====
+import datetime
+
+shared_device_map = {}       # roomNum -> deviceId（全端末共有）
+futon_done = {}              # roomNum -> date string（布団式完了）
+guest_counts = {}            # roomNum -> 人数（Stayseeから取得）
+
+@app.route('/shared/device-map', methods=['GET'])
+def get_device_map():
+    return jsonify({'deviceMap': shared_device_map})
+
+@app.route('/shared/device-map', methods=['POST'])
+def set_device_map():
+    data = request.get_json()
+    shared_device_map.update(data.get('deviceMap', {}))
+    return jsonify({'success': True})
+
+@app.route('/shared/futon', methods=['GET'])
+def get_futon():
+    today = datetime.date.today().isoformat()
+    # 翌日自動クリア
+    current = {k: v for k, v in futon_done.items() if v == today}
+    futon_done.clear()
+    futon_done.update(current)
+    return jsonify({'futon': futon_done, 'date': today})
+
+@app.route('/shared/futon', methods=['POST'])
+def set_futon():
+    data = request.get_json()
+    room = data.get('room', '')
+    today = datetime.date.today().isoformat()
+    if room:
+        futon_done[room] = today
+    return jsonify({'success': True, 'futon': futon_done})
+
+@app.route('/shared/futon/clear', methods=['POST'])
+def clear_futon():
+    data = request.get_json()
+    room = data.get('room', '')
+    if room and room in futon_done:
+        del futon_done[room]
+    return jsonify({'success': True})
+
 # ===== SwitchBot Webhook query =====
 @app.route('/switchbot/webhook/query', methods=['POST'])
 def switchbot_webhook_query():
