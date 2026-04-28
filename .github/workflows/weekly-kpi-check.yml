@@ -2,32 +2,26 @@ name: 週次KPIチェック
 
 on:
   schedule:
-      # 毎週日曜日 9:00 JST（UTC 00:00）
-          - cron: '0 0 * * 0'
-            workflow_dispatch:
-                # 手動実行も可能
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
-                jobs:
-                  kpi-check:
-                      runs-on: ubuntu-latest
-
-                              steps:
-                                    - name: リポジトリをチェックアウト
-                                            uses: actions/checkout@v4
-
-                                                  - name: Python環境をセットアップ
-                                                          uses: actions/setup-python@v5
-                                                                  with:
-                                                                            python-version: '3.11'
-
-                                                                                  - name: 依存ライブラリをインストール
-                                                                                          run: |
-                                                                                                    pip install requests jpholiday
-                                                                                                    
-                                                                                                          - name: KPIチェックを実行
-                                                                                                                  env:
-                                                                                                                            STAYSEE_TOKEN: ${{ secrets.STAYSEE_TOKEN }}
-                                                                                                                                      LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
-                                                                                                                                                LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
-                                                                                                                                                        run: |
-                                                                                                                                                                  python kpi_check.py
+jobs:
+  kpi-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+      - name: Python環境をセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 依存ライブラリをインストール
+        run: |
+          pip install requests jpholiday
+      - name: KPIチェックを実行
+        env:
+          STAYSEE_TOKEN: ${{ secrets.STAYSEE_TOKEN }}
+          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+          LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
+        run: |
+          python kpi_check.py
