@@ -34,6 +34,24 @@ def staysee_proxy(path):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# ===== /v1/ ルート（drink-order.html互換） =====
+@app.route('/v1/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def v1_proxy(path):
+    url = f"{STAYSEE_BASE}/{path}"
+    headers = {
+        'Authorization': f'Bearer {STAYSEE_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+    try:
+        if request.method == 'GET':
+            r = requests.get(url, headers=headers, params=request.args)
+        else:
+            r = requests.request(request.method, url, headers=headers, json=request.get_json())
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ===== LINE 通知 =====
 @app.route('/notify', methods=['POST'])
 def notify():
