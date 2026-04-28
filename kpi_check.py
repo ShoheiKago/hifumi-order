@@ -16,3 +16,309 @@ import requests
 import jpholiday
 from datetime import date, timedelta, datetime
 from collections import defaultdict
+
+# ===== 環境変数 =====
+STAYSEE_TOKEN = os.environ.get('STAYSEE_TOKEN', '')
+LINE_TOKEN = os.environ.get('LINE_TOKEN', '')
+LINE_GROUP_ID = os.environ.get('LINE_GROUP_ID', '')
+STAYSEE_BASE = 'https://api.staysee.jp/v1'
+TOTAL_ROOMS = 25  # ひふみ旅館の総部屋数
+
+# ===== 曜日タイプ分類 =====
+def day_type(d: date) -> str:
+    """日付を曜日タイプに分類"""
+    is_holiday = jpholiday.is_holiday(d)
+    weekday = d.weekday()  # 0=月, 5=土, 6=日
+    
+    if is_holiday:
+        if weekday == 5:
+            return 'holiday_sat'
+        elif weekday == 6:
+            return 'holiday_sun'
+        else:
+            return 'holiday_weekday'
+    elif weekday == 5:
+        return 'sat'
+    elif weekday == 6:
+        return 'sun'
+    else:
+        return 'weekday'
+
+# ===== Staysee API =====
+def staysee_get(path, params=None):
+    headers = {
+        'Authorization': f'Bearer {STAYSEE_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+    url = f"{STAYSEE_BASE}/{path}"
+    r = requests.get(url, headers=headers, params=params or {})
+    r.raise_for_status()
+    return r.json()
+
+def get_daily_sales(target_date: date) -> dict:
+    """指定日の予約データを取得して売上・稼働率を計算"""
+    date_str = target_date.strftime('%Y-%m-%d')
+    try:
+        data = staysee_get('reservations', {
+            'search_type': 'stay_date',
+            'date': date_str,
+            'children': 'allocate_rooms'
+        })
+        reservations = data if isinstance(data, list) else data.get('reservations', [])
+        
+        # チェックイン中(5)・予約確定(2)のみ
+        active = [r for r in reservations if r.get('status') in [2, 5]]
+        
+        # 売上合計（total_price）
+        total_sales = sum(int(r.get('total_price', 0)) for r in active)
+        
+        # 使用部屋数（重複排除）
+        used_rooms = set()
+        for r in active:
+            for alloc in r.get('allocate_rooms', r.get('room_allocations', [])):
+                if alloc.get('date') == date_str:
+                    used_rooms.add(alloc.get('room_id'))
+        
+        occupancy = len(used_rooms) / TOTAL_ROOMS * 100
+        
+        return {
+            'date': date_str,
+            'sales': total_sales,
+            'occupied_rooms': len(used_rooms),
+            'occupancy': occupancy
+        }
+    except Exception as e:
+        print(f"  警告: {date_str} のデータ取得失敗: {e}")
+        return {'date': date_str, 'sales': 0, 'occupied_rooms': 0, 'occupancy': 0}
+
+# ===== 今週・前年同週の計算 =====
+def get_week_range(base_date: date):
+    """月曜始まりの週の開始・終了日を返す"""
+    monday = base_date - timedelta(days=base_date.weekday())
+    sunday = monday + timedelta(days=6)
+    return monday, sunday
+
+def get_this_week_dates():
+    """今週（月〜日）の日付リスト"""
+    today = date.today()
+    monday, sunday = get_week_range(today)
+    return [monday + timedelta(days=i) for i in range(7)]
+
+def get_last_year_reference(this_week_dates):
+    """
+    曛&��補正した前年参照データを取得
+    - 今年の各日の曜日タイプを判定
+    - 前年から同じ曜日タイプの日を収集して平均を算出
+    - 今年の各日に適用
+    """
+    print("前年データを取得中...")
+    
+    # 前年の対応週あたりのデータを取得（±4週分を収集）
+    last_year_monday = get_week_range(this_week_dates[0])[0] - timedelta(days=365)
+    
+    # 前年の±4週分（合計9週）のデータを取得
+    last_year_dates = []
+    for week_offset in range(-4, 5):
+        week_start = last_year_monday + timedelta(weeks=week_offset)
+        for day_offset in range(7):
+            last_year_dates.append(week_start + timedelta(days=day_offset))
+    
+    # 曜日タイプ別に前年データを収集
+    type_sales = defaultdict(list)
+    type_occupancy = defaultdict(list)
+    
+    for d in last_year_dates:
+        dtype = day_type(d)
+        data = get_daily_sales(d)
+        if data['sales'] > 0:  # 売上がある日のみ
+            type_sales[dtype].append(data['sales'])
+            type_occupancy[dtype].append(data['occupancy'])
+    
+    # 曜日タイプ別平均を算出
+    type_avg = {}
+    for dtype in set(day_type(d) for d in this_week_dates):
+        sales_list = type_sales.get(dtype, [])
+        occ_list = type_occupancy.get(dtype, [])
+        type_avg[dtype] = {
+            'avg_sales': sum(sales_list) / len(sales_list) if sales_list else 0,
+            'avg_occupancy': sum(occ_list) / len(occ_list) if occ_list else 0,
+            'sample_count': len(sales_list)
+        }
+        print(f"  {dtype}: 売上平均¥{type_avg[dtype]['avg_sales']:,.0f} "
+              f"稼働率{type_avg[dtype]['avg_occupancy']:.1f}% "
+              f"(n={type_avg[dtype]['sample_count']})")
+    
+    return type_avg
+
+# ===== メイン処理 =====
+def main():
+    print("=" * 50)
+    print(f"ひふみ旅館 週次KPIチェック")
+    print(f"実行日時: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print("=" * 50)
+    
+    if not STAYSEE_TOKEN:
+        print("エラー: STAYSEE_TOKEN が設定されていません")
+        sys.exit(1)
+    
+    # 今週の日付
+    this_week = get_this_week_dates()
+    week_start = this_week[0].strftime('%Y/%m/%d')
+    week_end = this_week[-1].strftime('%Y/%m/%d')
+    print(f"\n対象週: {week_start} 〜 {week_end}")
+    
+    # 今週の実績を取得（今日まで）
+    today = date.today()
+    print("\n今週の実績を取得中...")
+    actual_days = []
+    for d in this_week:
+        if d <= today:
+            data = get_daily_sales(d)
+            data['day_type'] = day_type(d)
+            actual_days.append(data)
+            print(f"  {d}: 売上¥{data['sales']:,} 稼働率{data['occupancy']:.1f}%")
+    
+    if not actual_days:
+        print("今週のデータがまだありません")
+        return
+    
+    # 前年参照データ（曜日補正）
+    type_avg = get_last_year_reference(this_week)
+    
+    # 今週の目標を計算（前年曜日補正 × 105%）
+    TARGET_RATIO = 1.05
+    ALERT_RATIO = 0.90
+    
+    print("\n目標値と実績の比較:")
+    
+    week_actual_sales = 0
+    week_target_sales = 0
+    week_actual_occ = 0
+    week_target_occ = 0
+    
+    daily_results = []
+    for d in this_week[:len(actual_days)]:
+        dtype = day_type(d)
+        avg = type_avg.get(dtype, {'avg_sales': 0, 'avg_occupancy': 0})
+        target_sales = avg['avg_sales'] * TARGET_RATIO
+        target_occ = avg['avg_occupancy'] * TARGET_RATIO
+        
+        actual = actual_days[this_week.index(d)]
+        sales_rate = actual['sales'] / target_sales * 100 if target_sales > 0 else 100
+        occ_rate = actual['occupancy'] / target_occ * 100 if target_occ > 0 else 100
+        
+        week_actual_sales += actual['sales']
+        week_target_sales += target_sales
+        week_actual_occ += actual['occupancy']
+        week_target_occ += target_occ
+        
+        daily_results.append({
+            'date': d,
+            'actual_sales': actual['sales'],
+            'target_sales': target_sales,
+            'sales_rate': sales_rate,
+            'actual_occ': actual['occupancy'],
+            'target_occ': target_occ,
+            'occ_rate': occ_rate,
+        })
+        
+        print(f"  {d}({dtype}): 売上{sales_rate:.0f}% 稼働率{occ_rate:.0f}%")
+    
+    # 週次集計
+    week_sales_rate = week_actual_sales / week_target_sales * 100 if week_target_sales > 0 else 100
+    week_occ_rate = week_actual_occ / week_target_occ * 100 if week_target_occ > 0 else 100
+    avg_actual_occ = week_actual_occ / len(actual_days) if actual_days else 0
+    avg_target_occ = week_target_occ / len(actual_days) if actual_days else 0
+    
+    print(f"\n週次集計:")
+    print(f"  売上: ¥{week_actual_sales:,} / 目標¥{week_target_sales:,.0f} ({week_sales_rate:.1f}%)")
+    print(f"  稼働率: {avg_actual_occ:.1f}% / 目標{avg_target_occ:.1f}% ({week_occ_rate:.1f}%)")
+    
+    # アラート判定
+    sales_alert = week_sales_rate < (ALERT_RATIO * 100)
+    occ_alert = week_occ_rate < (ALERT_RATIO * 100)
+    
+    if not sales_alert and not occ_alert:
+        print("\n✅ 目標達成率90%以上 — 通知なし")
+        # 正常時も週次レポートとして送信
+        send_line_report(
+            week_start, week_end,
+            week_actual_sales, week_target_sales, week_sales_rate,
+            avg_actual_occ, avg_target_occ, week_occ_rate,
+            sales_alert, occ_alert, daily_results
+        )
+        return
+    
+    print("\n⚠️ アラート発生 — LINE通知を送信します")
+    send_line_report(
+        week_start, week_end,
+        week_actual_sales, week_target_sales, week_sales_rate,
+        avg_actual_occ, avg_target_occ, week_occ_rate,
+        sales_alert, occ_alert, daily_results
+    )
+
+def send_line_report(week_start, week_end,
+                     actual_sales, target_sales, sales_rate,
+                     actual_occ, target_occ, occ_rate,
+                     sales_alert, occ_alert, daily_results):
+    """LINEグループに週次レポートを送信"""
+    
+    if not LINE_TOKEN or not LINE_GROUP_ID:
+        print("LINE_TOKEN または LINE_GROUP_ID が未設定のため送信スキップ")
+        return
+    
+    # ステータス絵文字
+    sales_emoji = '⚠️' if sales_alert else '✅'
+    occ_emoji = '⚠️' if occ_alert else '✅'
+    alert_header = '【⚠️ KPIアラート】' if (sales_alert or occ_alert) else '【📊 週次KPIレポート】'
+    
+    # 日別サマリー（簡易）
+    daily_lines = []
+    day_names = ['月', '火', '水', '木', '金', '土', '日']
+    for r in daily_results:
+        dow = day_names[r['date'].weekday()]
+        s_icon = '⚠' if r['sales_rate'] < 90 else '○'
+        daily_lines.append(
+            f"  {r['date'].strftime('%m/%d')}({dow}) {s_icon} 売上{r['sales_rate']:.0f}% 稼働{r['occ_rate']:.0f}%"
+        )
+    
+    msg = f"""{alert_header}
+{week_start} 〜 {week_end}
+
+{sales_emoji} 売上
+  実績：¥{actual_sales:,}
+  目標：¥{target_sales:,.0f}
+  達成率：{sales_rate:.1f}%
+
+{occ_emoji} 稼働率
+  実績：{actual_occ:.1f}%
+  目標：{target_occ:.1f}%
+  達成率：{occ_rate:.1f}%
+
+【日別実績】
+{'chr(10).join(daily_lines)}
+
+※ 目標 = 前年同曜日実績 × 105%
+※ 90%未満でアラート"""
+
+    try:
+        r = requests.post(
+            'https://api.line.me/v2/bot/message/push',
+            headers={
+                'Authorization': f'Bearer {LINE_TOKEN}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'to': LINE_GROUP_ID,
+                'messages': [{'type': 'text', 'text': msg}]
+            }
+        )
+        if r.status_code == 200:
+            print("✅ LINE通知送信完了")
+        else:
+            print(f"❌ LINE通知失敗: {r.status_code} {r.text}")
+    except Exception as e:
+        print(f"❌ LINE通知エラー: {e}")
+
+if __name__ == '__main__':
+    main()
