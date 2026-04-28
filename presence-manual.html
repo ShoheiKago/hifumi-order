@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在室管理アプリ 操作マニュアル</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f8fc; --white: #fff; --border: #e8eaf0;
+    --text: #2d3142; --text-dim: #8b90a7; --text-light: #b0b5ca;
+    --green: #6bc8a0; --green-bg: #edf8f3; --green-border: #b8e8d4;
+    --blue: #7ba7e8; --blue-bg: #eef3fd;
+    --gold: #c9a84c; --gold-bg: #fff8ee; --gold-border: #f0d080;
+    --lavender: #a89ee8; --lavender-bg: #f3f1fd;
+    --shadow-sm: 0 1px 4px rgba(45,49,66,0.06);
+    --shadow: 0 2px 12px rgba(45,49,66,0.08);
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.7; }
+
+  /* ヘッダー */
+  .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-dot { width: 8px; height: 28px; background: linear-gradient(180deg, var(--green) 0%, var(--blue) 100%); border-radius: 4px; }
+  .header-title { font-size: 15px; font-weight: 700; }
+  .header-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; margin-top: 1px; }
+
+  main { max-width: 680px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  /* URL表示 */
+  .url-box { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+  .url-label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
+  .url-text { background: var(--bg); border-radius: 6px; padding: 10px 12px; font-size: 12px; color: var(--blue); font-weight: 600; word-break: break-all; }
+  .url-note { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+
+  /* セクションタイトル */
+  .section-title { font-size: 12px; color: var(--text-dim); letter-spacing: 0.15em; padding: 20px 0 8px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); margin-top: 8px; }
+  .section-title::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--blue); border-radius: 2px; flex-shrink: 0; }
+
+  /* 機能カード */
+  .feature-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+  .feature-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .feature-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .feature-icon.green { background: var(--green-bg); }
+  .feature-icon.blue { background: var(--blue-bg); }
+  .feature-icon.gold { background: var(--gold-bg); }
+  .feature-icon.lavender { background: var(--lavender-bg); }
+  .feature-title { font-size: 15px; font-weight: 700; }
+  .feature-body { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+  .feature-body p { margin-bottom: 6px; }
+  .feature-body ul { padding-left: 16px; margin-top: 4px; }
+  .feature-body li { margin-bottom: 4px; }
+
+  /* ステップ */
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-item { display: flex; gap: 12px; align-items: flex-start; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; box-shadow: var(--shadow-sm); }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--text); color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-num.green { background: var(--green); }
+  .step-num.blue { background: var(--blue); }
+  .step-num.gold { background: var(--gold); }
+  .step-content { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .step-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+  /* カラー説明 */
+  .color-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .color-item { display: flex; align-items: center; gap: 10px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; box-shadow: var(--shadow-sm); }
+  .color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .color-label { font-size: 13px; font-weight: 600; }
+  .color-desc { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+
+  /* モックUI */
+  .mock-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px; margin: 10px 0; }
+  .mock-room { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .mock-status { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+  .mock-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .mock-btn { display: inline-block; padding: 4px 10px; font-size: 10px; font-weight: 600; border-radius: 5px; border: 1px solid var(--border); color: var(--text-dim); margin-top: 4px; }
+  .mock-done { display: inline-block; padding: 4px 10px; font-size: 10px; font-weight: 600; border-radius: 5px; background: var(--gold-bg); border: 1px solid var(--gold-border); color: #a07820; margin-top: 4px; }
+
+  /* 注意事項 */
+  .notice-box { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+  .notice-header { background: #2d3142; padding: 10px 14px; font-size: 12px; font-weight: 700; color: white; letter-spacing: 0.1em; }
+  .notice-item { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; gap: 8px; line-height: 1.6; }
+  .notice-item:last-child { border-bottom: none; }
+  .notice-item::before { content: '・'; color: var(--blue); flex-shrink: 0; font-weight: 700; }
+
+  /* トラブル */
+  .trouble-box { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .trouble-item { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .trouble-item:last-child { border-bottom: none; }
+  .trouble-q { font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; gap: 8px; }
+  .trouble-q::before { content: 'Q'; color: #e05c5c; font-weight: 700; flex-shrink: 0; }
+  .trouble-a { color: #3a9e76; display: flex; gap: 8px; padding-left: 16px; }
+  .trouble-a::before { content: 'A'; color: #3a9e76; font-weight: 700; flex-shrink: 0; }
+
+  .footer { text-align: center; padding: 24px 16px; font-size: 11px; color: var(--text-light); border-top: 1px solid var(--border); margin-top: 20px; }
+
+  /* タグ */
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; margin-left: 6px; vertical-align: middle; }
+  .tag-green { background: var(--green-bg); color: #3a9e76; border: 1px solid var(--green-border); }
+  .tag-gold { background: var(--gold-bg); color: #a07820; border: 1px solid var(--gold-border); }
+  .tag-blue { background: var(--blue-bg); color: #5080c0; border: 1px solid #c0d4f8; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-dot"></div>
+    <div>
+      <div class="header-title">ひふみ旅館</div>
+      <div class="header-sub">在室管理アプリ 操作マニュアル</div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- URL -->
+  <div class="url-box" style="margin-top:4px;">
+    <div class="url-label">アクセスURL</div>
+    <div class="url-text">https://shoheikago.github.io/hifumi-order/presence-dashboard.html</div>
+    <div class="url-note">※ Wi-Fi・モバイル回線どちらでも利用可能です。ブックマーク登録推奨。</div>
+  </div>
+
+  <!-- 機能一覧 -->
+  <div class="section-title">主な機能</div>
+
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-icon green">🟢</div>
+      <div class="feature-title">在室状況のリアルタイム表示</div>
+    </div>
+    <div class="feature-body">
+      <p>SwitchBot人感センサーと連携し、各客室の在室・退室状況をリアルタイムで表示します。</p>
+      <ul>
+        <li>センサーが動きを検知すると自動で「在室」に更新</li>
+        <li>最終検知から<strong>10分間</strong>動きがなければ「退室」に変わります</li>
+        <li>最終検知時刻も表示されます</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-icon blue">👥</div>
+      <div class="feature-title">チェックイン人数の表示</div>
+    </div>
+    <div class="feature-body">
+      <p>Stayseeの予約情報と連携し、各部屋の宿泊予定人数を自動表示します。</p>
+    </div>
+  </div>
+
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-icon gold">🛏</div>
+      <div class="feature-title">布団敷き・リネン管理</div>
+    </div>
+    <div class="feature-body">
+      <ul>
+        <li><strong>布団敷き</strong>：当日宿泊の部屋に対して、完了ボタンを押すと時刻付きで記録</li>
+        <li><strong>翌日リネン</strong>：翌日チェックイン予定の部屋のリネン装着を管理</li>
+        <li>全スタッフの端末でリアルタイムに共有されます</li>
+        <li>翌日自動リセット</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 画面の見方 -->
+  <div class="section-title">画面の見方</div>
+
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-icon green">📊</div>
+      <div class="feature-title">上部サマリー</div>
+    </div>
+    <div class="feature-body">
+      <p>画面上部に4つの数字が表示されます：</p>
+      <ul>
+        <li><strong style="color:#3a9e76;">🟢 在室</strong>：現在センサーで在室を検知している部屋数</li>
+        <li><strong style="color:#8b90a7;">⚪ 退室</strong>：退室中の部屋数</li>
+        <li><strong style="color:#a89ee8;">🏠 総部屋数</strong>：全部屋数</li>
+        <li><strong style="color:#7ba7e8;">👥 チェックイン人数</strong>：本日の宿泊予定合計人数</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-icon blue">🏷</div>
+      <div class="feature-title">部屋カードの色の意味</div>
+    </div>
+    <div class="feature-body" style="margin-bottom:10px;">
+      <p>各部屋カードは状態によって色が変わります：</p>
+    </div>
+    <div class="color-list">
+      <div class="color-item">
+        <div class="color-dot" style="background:#6bc8a0;"></div>
+        <div>
+          <div class="color-label">緑（在室）</div>
+          <div class="color-desc">センサーが動きを検知中</div>
+        </div>
+      </div>
+      <div class="color-item">
+        <div class="color-dot" style="background:#e8eaf0;"></div>
+        <div>
+          <div class="color-label">白（退室）</div>
+          <div class="color-desc">10分以上動きなし</div>
+        </div>
+      </div>
+      <div class="color-item">
+        <div class="color-dot" style="background:#f0d080;"></div>
+        <div>
+          <div class="color-label">黄（布団敷き完了）</div>
+          <div class="color-desc">布団敷きが完了済み</div>
+        </div>
+      </div>
+      <div class="color-item">
+        <div class="color-dot" style="background:#e0e2ec;"></div>
+        <div>
+          <div class="color-label">グレー（未設定）</div>
+          <div class="color-desc">センサー未割り当て</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 布団敷き手順 -->
+  <div class="section-title">布団敷きの記録方法</div>
+  <div class="step-list">
+    <div class="step-item">
+      <div class="step-num gold">1</div>
+      <div class="step-content">
+        <div class="step-title">部屋カードを確認する</div>
+        <div class="step-desc">各フロアの部屋カード下部に「布団敷き」ボタンが表示されています。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num gold">2</div>
+      <div class="step-content">
+        <div class="step-title">「布団敷き」ボタンをタップ</div>
+        <div class="step-desc">布団敷きが完了したらボタンをタップします。</div>
+        <div class="mock-card" style="max-width:140px; margin-top:8px;">
+          <div class="mock-room">201</div>
+          <div class="mock-status"><div class="mock-dot" style="background:#e8eaf0;"></div>退室</div>
+          <div class="mock-btn">布団敷き</div>
+        </div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num gold">3</div>
+      <div class="step-content">
+        <div class="step-title">完了時刻が記録される</div>
+        <div class="step-desc">ボタンが「✓ 布団敷き完了 18:45」のように変わり、部屋カードが黄色になります。全端末で共有されます。</div>
+        <div class="mock-card" style="max-width:140px; margin-top:8px; background:#fff8ee; border-color:#f0d080;">
+          <div class="mock-room" style="color:#a07820;">201</div>
+          <div class="mock-status"><div class="mock-dot" style="background:#e8eaf0;"></div>退室</div>
+          <div class="mock-done">✓ 布団敷き完了 18:45</div>
+        </div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num gold">4</div>
+      <div class="step-content">
+        <div class="step-title">取り消す場合</div>
+        <div class="step-desc">「✓ 布団敷き完了」をもう一度タップすると取り消せます。翌日朝に自動リセットされます。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 翌日リネン -->
+  <div class="section-title">翌日リネン装着の管理</div>
+  <div class="step-list">
+    <div class="step-item">
+      <div class="step-num blue">1</div>
+      <div class="step-content">
+        <div class="step-title">翌日リネンセクションを確認</div>
+        <div class="step-desc">画面上部の「🛏 翌日リネン」セクションに、翌日チェックイン予定の部屋が自動表示されます。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num blue">2</div>
+      <div class="step-content">
+        <div class="step-title">「リネン装着」ボタンをタップ</div>
+        <div class="step-desc">リネン装着が完了したらボタンをタップします。時刻付きで記録され、全端末で共有されます。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num blue">3</div>
+      <div class="step-content">
+        <div class="step-title">翌日チェックイン当日も表示される</div>
+        <div class="step-desc">前日に登録したリネン完了状態は、チェックイン当日も表示されたままです。翌々日に自動リセットされます。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 初期設定 -->
+  <div class="section-title">初期設定（管理者のみ）</div>
+  <div class="step-list">
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">設定画面を開く</div>
+        <div class="step-desc">右上の ⚙ ボタンをタップして設定モーダルを開きます。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">「接続して取得」をタップ</div>
+        <div class="step-desc">SwitchBot APIに接続し、登録済みのセンサー一覧を取得します。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">センサーを部屋に割り当てる</div>
+        <div class="step-desc">各部屋のプルダウンから対応するセンサーを選択します。</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">「割り当てを保存」をタップ</div>
+        <div class="step-desc">保存するとサーバーに共有され、他のスタッフの端末にも自動反映されます。設定は一度行えばOKです。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 注意事項 -->
+  <div class="section-title">注意事項</div>
+  <div class="notice-box">
+    <div class="notice-header">確認事項</div>
+    <div class="notice-item">センサーは<strong>動体検知</strong>のため、静止しているお客様は10分後に退室と表示される場合があります。</div>
+    <div class="notice-item">インターネット接続が必要です（Wi-Fi・モバイル回線どちらでも可）。</div>
+    <div class="notice-item">男子浴場・女子浴場には布団敷きボタンは表示されません。</div>
+    <div class="notice-item">画面は5分ごとに自動更新されます。すぐに更新したい場合は右上の「↻」ボタンをタップしてください。</div>
+    <div class="notice-item">布団敷き・リネン完了状態は翌日に自動リセットされます。</div>
+  </div>
+
+  <!-- トラブルシューティング -->
+  <div class="section-title">困ったときは</div>
+  <div class="trouble-box">
+    <div class="trouble-item">
+      <div class="trouble-q">部屋が「センサー未設定」と表示される</div>
+      <div class="trouble-a">管理者に連絡してセンサーの割り当てを行ってもらってください。</div>
+    </div>
+    <div class="trouble-item">
+      <div class="trouble-q">在室なのに「退室」と表示される</div>
+      <div class="trouble-a">センサーの検知範囲内でお客様が静止している可能性があります。10分以内に動けば自動で更新されます。</div>
+    </div>
+    <div class="trouble-item">
+      <div class="trouble-q">画面が更新されない</div>
+      <div class="trouble-a">右上の「↻」ボタンをタップするか、ページを再読み込みしてください。</div>
+    </div>
+    <div class="trouble-item">
+      <div class="trouble-q">布団敷きボタンを押しても反映されない</div>
+      <div class="trouble-a">インターネット接続を確認してもう一度タップしてください。</div>
+    </div>
+    <div class="trouble-item">
+      <div class="trouble-q">翌日リネンセクションが表示されない</div>
+      <div class="trouble-a">翌日のチェックイン予約がない場合は表示されません。</div>
+    </div>
+  </div>
+
+  <div class="footer">ひふみ旅館　在室管理アプリ操作マニュアル<br>2026年4月作成</div>
+
+</main>
+</body>
+</html>
