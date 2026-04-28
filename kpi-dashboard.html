@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ひふみ旅館 KPIダッシュボード</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f8fc; --white: #fff; --border: #e8eaf0;
+    --text: #2d3142; --text-dim: #8b90a7; --text-light: #b0b5ca;
+    --green: #6bc8a0; --green-bg: #edf8f3; --green-border: #b8e8d4;
+    --red: #e07070; --red-bg: #fef0f0; --red-border: #f5c0c0;
+    --blue: #7ba7e8; --blue-bg: #eef3fd;
+    --yellow: #f0c840; --yellow-bg: #fffbe8; --yellow-border: #f0e080;
+    --shadow-sm: 0 1px 4px rgba(45,49,66,0.06);
+    --shadow: 0 2px 12px rgba(45,49,66,0.08);
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .header { background: #1a1c2e; border-bottom: 3px solid var(--blue); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-dot { width: 8px; height: 28px; background: linear-gradient(180deg, var(--blue) 0%, var(--green) 100%); border-radius: 4px; }
+  .header-title { font-size: 15px; font-weight: 700; color: #f0f2f8; }
+  .header-sub { font-size: 10px; color: var(--blue); letter-spacing: 0.08em; margin-top: 1px; }
+  .btn { padding: 7px 16px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:hover { background: #5ab88e; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #f0f2f8; }
+  .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+
+  main { max-width: 900px; margin: 0 auto; padding: 20px 20px 48px; }
+
+  /* サマリー */
+  .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-sm); }
+  .kpi-card.alert { border-color: var(--red-border); background: var(--red-bg); }
+  .kpi-card.good { border-color: var(--green-border); background: var(--green-bg); }
+  .kpi-label { font-size: 11px; color: var(--text-dim); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
+  .kpi-card.alert .kpi-value { color: var(--red); }
+  .kpi-card.good .kpi-value { color: #3a9e76; }
+  .kpi-target { font-size: 12px; color: var(--text-dim); }
+  .kpi-rate { font-size: 13px; font-weight: 600; margin-top: 6px; }
+  .kpi-rate.alert { color: var(--red); }
+  .kpi-rate.good { color: #3a9e76; }
+  .kpi-rate.warn { color: #c0953e; }
+
+  /* 週次テーブル */
+  .section-title { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; letter-spacing: 0.05em; }
+  .table-wrap { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #1a1c2e; color: var(--blue); padding: 10px 12px; text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
+  td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafbfe; }
+  .rate-cell { font-weight: 700; }
+  .rate-cell.good { color: #3a9e76; }
+  .rate-cell.warn { color: #c0953e; }
+  .rate-cell.alert { color: var(--red); }
+  .badge-type { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--bg); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* ローディング */
+  .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 週選択 */
+  .week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px 16px; box-shadow: var(--shadow-sm); }
+  .week-label { font-size: 15px; font-weight: 700; flex: 1; }
+  .nav-btn { width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--white); color: var(--text-dim); cursor: pointer; font-size: 14px; transition: all 0.15s; }
+  .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-dot"></div>
+    <div>
+      <div class="header-title">ひふみ旅館</div>
+      <div class="header-sub">KPIダッシュボード</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-outline" onclick="loadData()">↻ 更新</button>
+  </div>
+</div>
+
+<main>
+
+  <div class="week-nav">
+    <button class="nav-btn" onclick="changeWeek(-1)">◀</button>
+    <div class="week-label" id="weekLabel">読み込み中...</div>
+    <button class="nav-btn" onclick="changeWeek(1)">▶</button>
+  </div>
+
+  <div id="summaryGrid" class="summary-grid">
+    <div class="kpi-card"><div class="loading"><span class="spinner"></span>取得中...</div></div>
+    <div class="kpi-card"><div class="loading"><span class="spinner"></span>取得中...</div></div>
+  </div>
+
+  <div class="section-title">日付実績</div>
+  <div class="table-wrap">
+    <div id="tableArea" class="loading"><span class="spinner"></span>データを取得中...</div>
+  </div>
+
+</main>
+
+<script>
+const PROXY = 'https://hifumi-order.onrender.com';
+const TOTAL_ROOMS = 25;
+const TARGET_RATIO = 1.05;
+const ALERT_RATIO = 0.90;
+
+// 日本の祝日（簡易版 2026年）
+const HOLIDAYS_2026 = [
+  '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20',
+  '2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+  '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
+  '2026-10-12','2026-11-03','2026-11-23','2026-12-23'
+];
+const HOLIDAYS_2025 = [
+  '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
+  '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05',
+  '2025-05-06','2025-07-21','2025-08-11','2025-09-15','2025-09-22',
+  '2025-09-23','2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  '2025-12-23'
+];
+const ALL_HOLIDAYS = new Set([...HOLIDAYS_2026, ...HOLIDAYS_2025]);
+
+function isHoliday(dateStr) { return ALL_HOLIDAYS.has(dateStr); }
+
+function dayType(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay(); // 0=日, 6=土
+  const holiday = isHoliday(dateStr);
+  if (holiday) return dow === 6 ? '祝土' : (dow === 0 ? '祝日' : '祝日');
+  if (dow === 6) return '土曜';
+  if (dow === 0) return '日曜';
+  return '平日';
+}
+
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function getMondayOfWeek(offset = 0) {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + offset * 7);
+  return monday.toISOString().slice(0, 10);
+}
+
+let currentWeekOffset = 0;
+
+async function getReservations(dateStr) {
+  try {
+    const res = await fetch(`${PROXY}/staysee/reservations?search_type=stay_date&date=${dateStr}&children=allocate_rooms`);
+    const data = await res.json();
+    const reservations = Array.isArray(data) ? data : (data.reservations || []);
+    const active = reservations.filter(r => r.status === 2 || r.status === 5);
+
+    let sales = 0;
+    const usedRooms = new Set();
+    active.forEach(r => {
+      sales += parseInt(r.total_price || 0);
+      (r.allocate_rooms || r.room_allocations || []).forEach(alloc => {
+        if (alloc.date === dateStr) usedRooms.add(alloc.room_id);
+      });
+    });
+
+    return {
+      sales,
+      occupancy: usedRooms.size / TOTAL_ROOMS * 100,
+      rooms: usedRooms.size
+    };
+  } catch(_) {
+    return { sales: 0, occupancy: 0, rooms: 0 };
+  }
+}
+
+async function loadData() {
+  const monday = getMondayOfWeek(currentWeekOffset);
+  const sunday = addDays(monday, 6);
+  const today = new Date().toISOString().slice(0, 10);
+
+  document.getElementById('weekLabel').textContent =
+    `${monday.replace(/-/g, '/')} 〜 ${sunday.replace(/-/g, '/')}`;
+  document.getElementById('summaryGrid').innerHTML =
+    '<div class="kpi-card"><div class="loading"><span class="spinner"></span>取得中...</div></div>' +
+    '<div class="kpi-card"><div class="loading"><span class="spinner"></span>取得中...</div></div>';
+  document.getElementById('tableArea').innerHTML =
+    '<div class="loading"><span class="spinner"></span>データを取得中（中...</div>';
+
+  const dayNames = ['月','火','水','木','金','土','日'];
+  const rows = [];
+  let totalActualSales = 0, totalTargetSales = 0;
+  let totalActualOcc = 0, totalTargetOcc = 0;
+  let dayCount = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const dateStr = addDays(monday, i);
+    if (dateStr > today) continue;
+    const dtype = dayType(dateStr);
+    const actual = await getReservations(dateStr);
+    const lyBase = addDays(monday, i - 365);
+    const lySamples = [];
+    for (let w = -3; w <= 3; w++) {
+      const lyDate = addDays(lyBase, w * 7);
+      if (dayType(lyDate) === dtype) {
+        const d = await getReservations(lyDate);
+        if (d.sales > 0) lySamples.push(d);
+      }
+    }
+    const avgSales = lySamples.length > 0 ? lySamples.reduce((s,d)=>s+a.sales,0)/lySamples.length : 0;
+    const avgOcc = lySamples.length > 0 ? lySamples.reduce((s,d)=>s+d.occupancy,0)/lySamples.length : 0;
+    const targetSales = avgSales * TARGET_RATIO;
+    const targetOcc = avgOcc * TARGET_RATIO;
+    const salesRate = targetSales > 0 ? actual.sales / targetSales * 100 : 100;
+    const occRate = targetOcc > 0 ? actual.occupancy / targetOcc * 100 : 100;
+    totalActualSales += actual.sales;
+    totalTargetSales += targetSales;
+    totalActualOcc += actual.occupancy;
+    totalTargetOcc += targetOcc;
+    dayCount++;
+    const rateClass = r => r < 90 ? 'alert' : (r < 100 ? 'warn' : 'good');
+    rows.push(`<tr><td>${dateStr.slice(5).replace('-', '/')}(${dayNames[i]})<br><span class="badge-type">${dtype}</span></td><td>¥${actual.sales.toLocaleString()}</td><td>¥${targetSales.toLocaleString('ja',{maximumFractionDigits:0})}</td><td class="rate-cell ${rateClass(salesRate)}">${salesRate.toFixed(0)}%</td><td>${actual.occupancy.toFixed(1)}%</td><td>${targetOcc.toFixed(1)}%</td><td class="rate-cell ${rateClass(occRate)}">${occRate.toFixed(0)}%</td></tr>`);
+  }
+
+  const weekSalesRate = totalTargetSales > 0 ? totalActualSales / totalTargetSales * 100 : 100;
+  const weekOccRate = totalTargetOcc > 0 ? totalActualOcc / totalTargetOcc * 100 : 100;
+  const avgActualOcc = dayCount > 0 ? totalActualOcc / dayCount : 0;
+  const avgTargetOcc = dayCount > 0 ? totalTargetOcc / dayCount : 0;
+  const salesAlert = weekSalesRate < 90;
+  const occAlert = weekOccRate < 90;
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="kpi-card ${salesAlert ? 'alert' : (weekSalesRate >= 100 ? 'good' : '')}">
+      <div class="kpi-label">💰 週間売上</div>
+      <div class="kpi-value">¥${totalActualSales.toLocaleString()}</div>
+      <div class="kpi-target">目標 ¥${totalTargetSales.toLocaleString('ja',{maximumFractionDigits:0})}</div>
+      <div class="kpi-rate ${salesAlert ? 'alert' : (weekSalesRate >= 100 ? 'good' : 'warn')}">${salesAlert ? '⚠️ ' : (weekSalesRate >= 100 ? '✅ ' : '📊 ')}達成率 ${weekSalesRate.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card ${occAlert ? 'alert' : (weekOccRate >= 100 ? 'good' : '')}">
+      <div class="kpi-label">🏠 平均稼働率</div>
+      <div class="kpi-value">${avgActualOcc.toFixed(1)}%</div>
+      <div class="kpi-target">目標 ${avgTargetOcc.toFixed(1)}%</div>
+      <div class="kpi-rate ${occAlert ? 'alert' : (weekOccRate >= 100 ? 'good' : 'warn')}">${occAlert ? '⚠️ ' : (weekOccRate >= 100 ? '✅ ' : '📊 ')}達成率 ${weekOccRate.toFixed(1)}%</div>
+    </div>`;
+  document.getElementById('tableArea').innerHTML = `<table><thead><tr><th>日付</th><th>売上実績</th><th>売上目標</th><th>達成率</th><th>稼働率実績</th><th>稼働率目標</th><th>達成率</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+
+function changeWeek(offset) {
+  currentWeekOffset += offset;
+  loadData();
+}
+
+window.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
