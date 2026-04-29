@@ -180,7 +180,7 @@
     <button class="icon-btn" onclick="openSettings()" title="設定">⚙</button>
   </div>
 </div>
-<div class="summary">
+<div class="summary" style="grid-template-columns:repeat(3,1fr);">
   <div class="summary-card">
     <div class="summary-icon occupied">🟢</div>
     <div><div class="summary-num occupied" id="occupiedCount">-</div><div class="summary-label">在室</div></div>
@@ -190,12 +190,20 @@
     <div><div class="summary-num vacant" id="vacantCount">-</div><div class="summary-label">退室</div></div>
   </div>
   <div class="summary-card">
-    <div class="summary-icon total">🏠</div>
-    <div><div class="summary-num total" id="totalCount">-</div><div class="summary-label">総部屋数</div></div>
-  </div>
-  <div class="summary-card">
     <div class="summary-icon" style="background:var(--blue-bg);">👥</div>
     <div><div class="summary-num" style="color:var(--blue);" id="guestTotalCount">-</div><div class="summary-label">チェックイン人数</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon" style="background:var(--yellow-bg);">🛏</div>
+    <div><div class="summary-num" style="color:#a07820;" id="futonDoneCount">-</div><div class="summary-label">布団敷き完了（今日）</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon" style="background:var(--yellow-bg);">🏷</div>
+    <div><div class="summary-num" style="color:#a07820;" id="linenDoneCount">-</div><div class="summary-label">リネン完了（翌日分）</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon" style="background:var(--yellow-bg);">📋</div>
+    <div><div class="summary-num" style="color:#a07820;" id="linenTotalCount">-</div><div class="summary-label">翌日チェックイン予定</div></div>
   </div>
 </div>
 
@@ -304,6 +312,15 @@ function renderRooms(floor, rooms) {
 }
 
 
+function updateFutonLinenSummary() {
+  const futonEl = document.getElementById('futonDoneCount');
+  if (futonEl) futonEl.textContent = Object.keys(futonDone).length;
+  const linenDoneEl = document.getElementById('linenDoneCount');
+  if (linenDoneEl) linenDoneEl.textContent = Object.keys(linenDone).length;
+  const linenTotalEl = document.getElementById('linenTotalCount');
+  if (linenTotalEl) linenTotalEl.textContent = tomorrowGuests.length;
+}
+
 async function loadSharedData() {
   try {
     const [resMap, resFuton, resLinen] = await Promise.all([
@@ -321,6 +338,7 @@ async function loadSharedData() {
     futonDone = futonData.futon || {};
     linenDone = linenData.linen || {};
     renderFloors();
+    updateFutonLinenSummary();
   } catch(e) { console.warn('共有データ取得失敗:', e.message); }
 }
 
@@ -344,6 +362,7 @@ async function toggleFuton(room) {
       futonDone[room] = { date: dateStr, time: timeStr };
     }
     for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
+    updateFutonLinenSummary();
   } catch(e) { alert('更新に失敗しました: ' + e.message); }
 }
 
@@ -425,7 +444,7 @@ function renderLinenSection() {
   const section = document.getElementById('linenSection');
   const grid = document.getElementById('linenGrid');
   const countEl = document.getElementById('linenCount');
-  if (tomorrowGuests.length === 0) { section.style.display = 'none'; return; }
+  if (tomorrowGuests.length === 0) { section.style.display = 'none'; updateFutonLinenSummary(); return; }
   section.style.display = 'block';
   countEl.textContent = '翌日チェックイン ' + tomorrowGuests.length + '室';
   grid.innerHTML = tomorrowGuests.map(g => {
@@ -439,6 +458,7 @@ function renderLinenSection() {
         : '<button class="linen-btn" onclick="toggleLinen(\'' + g.room + '\')">リネン装着</button>'
       ) + '</div>';
   }).join('');
+  updateFutonLinenSummary();
 }
 
 async function toggleLinen(room) {
@@ -516,7 +536,8 @@ async function refreshAll() {
   for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
   document.getElementById('occupiedCount').textContent = occupied;
   document.getElementById('vacantCount').textContent = vacant;
-  document.getElementById('totalCount').textContent = allRooms.length;
+  // 布団敷き完了数を更新
+  updateFutonLinenSummary();
   const now2 = new Date();
   document.getElementById('lastUpdate').textContent = '最終更新: ' + now2.getFullYear() + '/' + (now2.getMonth()+1) + '/' + now2.getDate() + ' ' + String(now2.getHours()).padStart(2,'0') + ':' + String(now2.getMinutes()).padStart(2,'0');
   hideLoading();
