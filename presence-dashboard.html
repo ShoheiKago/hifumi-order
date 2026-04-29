@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ã²ãµã¿æé¤¨ å¨å®¤ããã·ã¥ãã¼ã</title>
+<title>ひふみ旅館 在室ダッシュボード</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -161,48 +161,48 @@
 <body>
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loading-spinner"></div>
-  <div class="loading-text" id="loadingText">SwitchBot APIã«æ¥ç¶ä¸­...</div>
+  <div class="loading-text" id="loadingText">SwitchBot APIに接続中...</div>
 </div>
 <div class="header">
   <div class="header-left">
     <div class="header-dot"></div>
     <div>
-      <div class="header-title">ã²ãµã¿æé¤¨</div>
-      <div class="header-sub">å¨å®¤ããã·ã¥ãã¼ã</div>
+      <div class="header-title">ひふみ旅館</div>
+      <div class="header-sub">在室ダッシュボード</div>
     </div>
   </div>
   <div class="header-right">
     <div class="status-pill" id="statusPill">
       <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">æ¥ç¶ä¸­...</span>
+      <span id="statusText">接続中...</span>
     </div>
-    <button class="refresh-big-btn" onclick="refreshAll()" title="æ´æ°">â» æ´æ°</button>
-    <button class="icon-btn" onclick="openSettings()" title="è¨­å®">â</button>
+    <button class="refresh-big-btn" onclick="refreshAll()" title="更新">↻ 更新</button>
+    <button class="icon-btn" onclick="openSettings()" title="設定">⚙</button>
   </div>
 </div>
 <div class="summary">
   <div class="summary-card">
-    <div class="summary-icon occupied">ð¢</div>
-    <div><div class="summary-num occupied" id="occupiedCount">-</div><div class="summary-label">å¨å®¤</div></div>
+    <div class="summary-icon occupied">🟢</div>
+    <div><div class="summary-num occupied" id="occupiedCount">-</div><div class="summary-label">在室</div></div>
   </div>
   <div class="summary-card">
-    <div class="summary-icon vacant">âª</div>
-    <div><div class="summary-num vacant" id="vacantCount">-</div><div class="summary-label">éå®¤</div></div>
+    <div class="summary-icon vacant">⚪</div>
+    <div><div class="summary-num vacant" id="vacantCount">-</div><div class="summary-label">退室</div></div>
   </div>
   <div class="summary-card">
-    <div class="summary-icon total">ð </div>
-    <div><div class="summary-num total" id="totalCount">-</div><div class="summary-label">ç·é¨å±æ°</div></div>
+    <div class="summary-icon total">🏠</div>
+    <div><div class="summary-num total" id="totalCount">-</div><div class="summary-label">総部屋数</div></div>
   </div>
   <div class="summary-card">
-    <div class="summary-icon" style="background:var(--blue-bg);">ð¥</div>
-    <div><div class="summary-num" style="color:var(--blue);" id="guestTotalCount">-</div><div class="summary-label">ãã§ãã¯ã¤ã³äººæ°</div></div>
+    <div class="summary-icon" style="background:var(--blue-bg);">👥</div>
+    <div><div class="summary-num" style="color:var(--blue);" id="guestTotalCount">-</div><div class="summary-label">チェックイン人数</div></div>
   </div>
 </div>
 
-<!-- ç¿æ¥ãªãã³ã»ã¯ã·ã§ã³ -->
+<!-- 翌日リネンセクション -->
 <div class="linen-section" id="linenSection" style="display:none">
   <div class="linen-header">
-    <div class="linen-tag">ð ç¿æ¥ãªãã³</div>
+    <div class="linen-tag">🛏 翌日リネン</div>
     <div class="linen-line"></div>
     <div class="linen-count" id="linenCount"></div>
   </div>
@@ -213,25 +213,25 @@
 <div class="last-update" id="lastUpdate"></div>
 <div class="modal-overlay" id="settingsModal" style="display:none">
   <div class="modal">
-    <div class="modal-title">è¨­å®</div>
-    <div class="modal-sub">SwitchBot APIã®æ¥ç¶ã¨ã»ã³ãµã¼å²ãå½ã¦ãè¨­å®ãã¾ã</div>
+    <div class="modal-title">設定</div>
+    <div class="modal-sub">SwitchBot APIの接続とセンサー割り当てを設定します</div>
     <div class="form-group">
-      <label class="form-label">APIãã¼ã¯ã³</label>
-      <input class="form-input" id="inputToken" placeholder="ãã¼ã¯ã³ãå¥å..." type="password">
+      <label class="form-label">APIトークン</label>
+      <input class="form-input" id="inputToken" placeholder="トークンを入力..." type="password">
     </div>
     <div class="form-group">
-      <label class="form-label">ã¯ã©ã¤ã¢ã³ãã·ã¼ã¯ã¬ãã</label>
-      <input class="form-input" id="inputSecret" placeholder="ã·ã¼ã¯ã¬ãããå¥å..." type="password">
+      <label class="form-label">クライアントシークレット</label>
+      <input class="form-input" id="inputSecret" placeholder="シークレットを入力..." type="password">
     </div>
     <div class="assign-section" id="assignSection" style="display:none">
-      <div class="assign-title">ã»ã³ãµã¼ãé¨å±ã«å²ãå½ã¦</div>
+      <div class="assign-title">センサーを部屋に割り当て</div>
       <div id="assignRows"></div>
     </div>
     <div id="webhookStatus" style="display:none"></div>
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeSettings()">éãã</button>
-      <button class="btn-webhook" onclick="setupWebhook()">Webhookè¨­å®</button>
-      <button class="btn-primary" id="connectBtn" onclick="connectApi()">æ¥ç¶ãã¦åå¾</button>
+      <button class="btn-secondary" onclick="closeSettings()">閉じる</button>
+      <button class="btn-webhook" onclick="setupWebhook()">Webhook設定</button>
+      <button class="btn-primary" id="connectBtn" onclick="connectApi()">接続して取得</button>
     </div>
   </div>
 </div>
@@ -241,7 +241,7 @@ const ROOMS = {
   '2F': ['201','202','203','205','206','207','208','209','210','211','212'],
   '3F': ['301','302','303','305','306','307','308','309','310','311','312','313'],
   '4F': ['401','402'],
-  'å±ç¨': ['ç·å­æµ´å ´','å¥³å­æµ´å ´'],
+  '共用': ['男子浴場','女子浴場'],
 };
 let token = localStorage.getItem('sb_token') || '6f2ca7ac784852b0dbe6dfde2cd9f419c3a78bbc68db70dfb99ebb3496d7c91a7f5f2beaa52662368de5b8167029c796';
 let secret = localStorage.getItem('sb_secret') || 'bfa5c9d8bc762c12430509398c11b490';
@@ -268,7 +268,7 @@ function renderFloors() {
   for (const [floor, rooms] of Object.entries(ROOMS)) {
     const section = document.createElement('div');
     section.className = 'floor-section';
-    section.innerHTML = '<div class="floor-header"><div class="floor-tag">' + floor + '</div><div class="floor-line"></div><div class="floor-count">' + rooms.length + 'å®¤</div></div><div class="room-grid" id="grid-' + floor + '"></div>';
+    section.innerHTML = '<div class="floor-header"><div class="floor-tag">' + floor + '</div><div class="floor-line"></div><div class="floor-count">' + rooms.length + '室</div></div><div class="room-grid" id="grid-' + floor + '"></div>';
     container.appendChild(section);
     renderRooms(floor, rooms);
   }
@@ -278,26 +278,26 @@ function renderRooms(floor, rooms) {
   const grid = document.getElementById('grid-' + floor);
   if (!grid) return;
   grid.innerHTML = '';
-  // æµ´å ´ç³»ã¯ãã¿ã³ãªã
-  const NO_FUTON_ROOMS = ['ç·å­æµ´å ´', 'å¥³å­æµ´å ´'];
+  // 浴場系はボタンなし
+  const NO_FUTON_ROOMS = ['男子浴場', '女子浴場'];
   rooms.forEach(room => {
     const s = roomStatus[room] || {};
     const hasDevice = !!deviceMap[room];
     const sc = !hasDevice ? 'loading' : (s.occupied === null ? 'loading' : (s.occupied ? 'occupied' : 'vacant'));
-    const st = !hasDevice ? 'ã»ã³ãµã¼æªè¨­å®' : (s.occupied === null ? 'åå¾ä¸­...' : (s.occupied ? 'å¨å®¤' : 'éå®¤'));
+    const st = !hasDevice ? 'センサー未設定' : (s.occupied === null ? '取得中...' : (s.occupied ? '在室' : '退室'));
     const isFutonDone = !!futonDone[room];
     const extraClass = isFutonDone ? ' futon-done' : '';
     const showFuton = !NO_FUTON_ROOMS.includes(room);
     const futonTime = isFutonDone && futonDone[room].time ? ' ' + futonDone[room].time : '';
     const futonHtml = !showFuton ? '' : (isFutonDone
-      ? '<div class="room-futon-done" onclick="toggleFuton(\'' + room + '\')" style="cursor:pointer;">â å¸å£æ·ãå®äº' + futonTime + '</div>'
-      : '<button class="room-futon-btn" onclick="toggleFuton(\'' + room + '\')">å¸å£æ·ã</button>');
-    const guestHtml = guestMap[room] ? '<div class="room-guests">ð¥ ' + guestMap[room] + 'å</div>' : '';
+      ? '<div class="room-futon-done" onclick="toggleFuton(\'' + room + '\')" style="cursor:pointer;">✓ 布団敷き完了' + futonTime + '</div>'
+      : '<button class="room-futon-btn" onclick="toggleFuton(\'' + room + '\')">布団敷き</button>');
+    const guestHtml = guestMap[room] ? '<div class="room-guests">👥 ' + guestMap[room] + '名</div>' : '';
     grid.innerHTML += '<div class="room-card ' + sc + extraClass + '" id="card-' + room + '">' +
       '<div class="room-num">' + room + '</div>' +
       guestHtml +
       '<div class="room-status ' + sc + '"><div class="room-dot"></div>' + st + '</div>' +
-      (s.lastTime ? '<div class="room-time">æ¤ç¥ ' + s.lastTime + '</div>' : '') +
+      (s.lastTime ? '<div class="room-time">検知 ' + s.lastTime + '</div>' : '') +
       futonHtml +
       '</div>';
   });
@@ -321,7 +321,7 @@ async function loadSharedData() {
     futonDone = futonData.futon || {};
     linenDone = linenData.linen || {};
     renderFloors();
-  } catch(e) { console.warn('å±æãã¼ã¿åå¾å¤±æ:', e.message); }
+  } catch(e) { console.warn('共有データ取得失敗:', e.message); }
 }
 
 async function toggleFuton(room) {
@@ -344,7 +344,7 @@ async function toggleFuton(room) {
       futonDone[room] = { date: dateStr, time: timeStr };
     }
     for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
-  } catch(e) { alert('æ´æ°ã«å¤±æãã¾ãã: ' + e.message); }
+  } catch(e) { alert('更新に失敗しました: ' + e.message); }
 }
 
 async function loadGuestCounts() {
@@ -372,7 +372,7 @@ async function loadGuestCounts() {
     });
     document.getElementById('guestTotalCount').textContent = totalGuests;
     for (const [floor, rooms] of Object.entries(ROOMS)) renderRooms(floor, rooms);
-  } catch(e) { console.warn('ãã§ãã¯ã¤ã³äººæ°åå¾å¤±æ:', e.message); }
+  } catch(e) { console.warn('チェックイン人数取得失敗:', e.message); }
 }
 
 
@@ -383,7 +383,7 @@ async function loadTomorrowGuests() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 
-    // ä»æ¥ã»ææ¥ã®ä¸¡æ¹ãåå¾ï¼ãªãã³ä½æ¥­ã¯åæ¥ãå½æ¥ã¾ã§è¡¨ç¤ºï¼
+    // 今日・明日の両方を取得（リネン作業は前日〜当日まで表示）
     const [resRsvToday, resRsvTomorrow, resRooms] = await Promise.all([
       fetch(PROXY + '/staysee/reservations?search_type=stay_date&date=' + fmt(today) + '&children=allocate_rooms'),
       fetch(PROXY + '/staysee/reservations?search_type=stay_date&date=' + fmt(tomorrow) + '&children=allocate_rooms'),
@@ -396,7 +396,7 @@ async function loadTomorrowGuests() {
     const roomNameMap = {};
     (dataRooms.rooms || []).forEach(r => { roomNameMap[r.id] = r.name; });
 
-    // ç¿æ¥ãã§ãã¯ã¤ã³äºå®ï¼status=2ï¼ã®ã¿å¯¾è±¡
+    // 翌日チェックイン予定（status=2）のみ対象
     const seenRooms = new Set();
     tomorrowGuests = [];
 
@@ -418,7 +418,7 @@ async function loadTomorrowGuests() {
 
     tomorrowGuests.sort((a, b) => (parseInt(a.room) || 9999) - (parseInt(b.room) || 9999));
     renderLinenSection();
-  } catch(e) { console.warn('ç¿æ¥äºç´åå¾å¤±æ:', e.message); }
+  } catch(e) { console.warn('翌日予約取得失敗:', e.message); }
 }
 
 function renderLinenSection() {
@@ -427,16 +427,16 @@ function renderLinenSection() {
   const countEl = document.getElementById('linenCount');
   if (tomorrowGuests.length === 0) { section.style.display = 'none'; return; }
   section.style.display = 'block';
-  countEl.textContent = 'ç¿æ¥ãã§ãã¯ã¤ã³ ' + tomorrowGuests.length + 'å®¤';
+  countEl.textContent = '翌日チェックイン ' + tomorrowGuests.length + '室';
   grid.innerHTML = tomorrowGuests.map(g => {
     const isDone = !!linenDone[g.room];
     const timeStr = isDone && linenDone[g.room].time ? ' ' + linenDone[g.room].time : '';
     return '<div class="linen-card' + (isDone ? ' linen-complete' : '') + '">' +
       '<div class="linen-num">' + g.room + '</div>' +
-      (g.name ? '<div class="linen-guest">' + g.name + ' æ§</div>' : '') +
+      (g.name ? '<div class="linen-guest">' + g.name + ' 様</div>' : '') +
       (isDone
-        ? '<div class="linen-done" onclick="toggleLinen(\'' + g.room + '\')">â ãªãã³å®äº' + timeStr + '</div>'
-        : '<button class="linen-btn" onclick="toggleLinen(\'' + g.room + '\')">ãªãã³è£ç</button>'
+        ? '<div class="linen-done" onclick="toggleLinen(\'' + g.room + '\')">✓ リネン完了' + timeStr + '</div>'
+        : '<button class="linen-btn" onclick="toggleLinen(\'' + g.room + '\')">リネン装着</button>'
       ) + '</div>';
   }).join('');
 }
@@ -461,29 +461,29 @@ async function toggleLinen(room) {
       linenDone[room] = { date: dateStr, time: timeStr };
     }
     renderLinenSection();
-  } catch(e) { alert('æ´æ°ã«å¤±æãã¾ãã: ' + e.message); }
+  } catch(e) { alert('更新に失敗しました: ' + e.message); }
 }
 
 async function loadDevices() {
-  showLoading('ããã¤ã¹ä¸è¦§ãåå¾ä¸­...');
+  showLoading('デバイス一覧を取得中...');
   try {
     const res = await fetch(PROXY + '/switchbot/devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, secret }) });
     const data = await res.json();
     if (data.statusCode === 100) {
       devices = data.body.deviceList || [];
-      setStatus('connected', devices.length + 'å°ã®ããã¤ã¹ãæ¤åº');
+      setStatus('connected', devices.length + '台のデバイスを検出');
       const sensors = devices.filter(d => d.deviceType?.toLowerCase().includes('motion') || d.deviceType?.toLowerCase().includes('presence'));
       if (sensors.length > 0) { await refreshAll(); } else { hideLoading(); openSettings(); }
       await loadGuestCounts();
       await loadTomorrowGuests();
-    } else { setStatus('error', 'APIèªè¨¼ã¨ã©ã¼'); hideLoading(); openSettings(); }
-  } catch (e) { setStatus('error', 'æ¥ç¶å¤±æ'); hideLoading(); openSettings(); }
+    } else { setStatus('error', 'API認証エラー'); hideLoading(); openSettings(); }
+  } catch (e) { setStatus('error', '接続失敗'); hideLoading(); openSettings(); }
 }
 
 async function refreshAll() {
   const btn = document.querySelector('.refresh-big-btn');
-  if (btn) { btn.classList.add('loading'); btn.textContent = 'â» æ´æ°ä¸­...'; btn.disabled = true; }
-  setStatus('connected', 'æ´æ°ä¸­...');
+  if (btn) { btn.classList.add('loading'); btn.textContent = '↻ 更新中...'; btn.disabled = true; }
+  setStatus('connected', '更新中...');
   try {
     const res = await fetch(PROXY + '/switchbot/webhook/status');
     if (res.ok) {
@@ -499,7 +499,7 @@ async function refreshAll() {
         localStorage.setItem('sb_last_detected', JSON.stringify(lastDetectedMap));
       }
     }
-  } catch(e) { console.warn('Webhook statusåå¾å¤±æ:', e.message); }
+  } catch(e) { console.warn('Webhook status取得失敗:', e.message); }
   const allRooms = Object.values(ROOMS).flat();
   const now = new Date();
   let occupied = 0, vacant = 0;
@@ -518,11 +518,11 @@ async function refreshAll() {
   document.getElementById('vacantCount').textContent = vacant;
   document.getElementById('totalCount').textContent = allRooms.length;
   const now2 = new Date();
-  document.getElementById('lastUpdate').textContent = 'æçµæ´æ°: ' + now2.getFullYear() + '/' + (now2.getMonth()+1) + '/' + now2.getDate() + ' ' + String(now2.getHours()).padStart(2,'0') + ':' + String(now2.getMinutes()).padStart(2,'0');
+  document.getElementById('lastUpdate').textContent = '最終更新: ' + now2.getFullYear() + '/' + (now2.getMonth()+1) + '/' + now2.getDate() + ' ' + String(now2.getHours()).padStart(2,'0') + ':' + String(now2.getMinutes()).padStart(2,'0');
   hideLoading();
   const btn2 = document.querySelector('.refresh-big-btn');
-  if (btn2) { btn2.classList.remove('loading'); btn2.textContent = 'â» æ´æ°'; btn2.disabled = false; }
-  setStatus('connected', devices.length + 'å°ã®ããã¤ã¹ãæ¤åº');
+  if (btn2) { btn2.classList.remove('loading'); btn2.textContent = '↻ 更新'; btn2.disabled = false; }
+  setStatus('connected', devices.length + '台のデバイスを検出');
 }
 
 function openSettings() {
@@ -538,13 +538,13 @@ async function setupWebhook() {
   const statusEl = document.getElementById('webhookStatus');
   statusEl.style.display = 'block';
   statusEl.style.color = 'var(--text-dim)';
-  statusEl.textContent = 'Webhookè¨­å®ä¸­...';
+  statusEl.textContent = 'Webhook設定中...';
   try {
     const res = await fetch(PROXY + '/switchbot/webhook/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, secret, url: webhookUrl }) });
     const data = await res.json();
-    if (data.statusCode === 100 || data.statusCode === 151) { statusEl.style.color = '#3a9e76'; statusEl.textContent = 'â Webhookè¨­å®å®äº'; }
-    else { statusEl.style.color = '#c0523e'; statusEl.textContent = 'ã¨ã©ã¼: ' + JSON.stringify(data); }
-  } catch(e) { statusEl.style.color = '#c0523e'; statusEl.textContent = 'æ¥ç¶å¤±æ: ' + e.message; }
+    if (data.statusCode === 100 || data.statusCode === 151) { statusEl.style.color = '#3a9e76'; statusEl.textContent = '✓ Webhook設定完了'; }
+    else { statusEl.style.color = '#c0523e'; statusEl.textContent = 'エラー: ' + JSON.stringify(data); }
+  } catch(e) { statusEl.style.color = '#c0523e'; statusEl.textContent = '接続失敗: ' + e.message; }
 }
 
 function renderAssignSection() {
@@ -554,28 +554,28 @@ function renderAssignSection() {
   const sensors = devices.filter(d => d.deviceType?.toLowerCase().includes('motion') || d.deviceType?.toLowerCase().includes('presence'));
   if (sensors.length === 0) { section.style.display = 'none'; return; }
   const allRooms = Object.values(ROOMS).flat();
-  rows.innerHTML = allRooms.map(room => '<div class="assign-row"><div class="assign-room">' + room + '</div><select class="assign-select" id="assign-' + room + '"><option value="">æªè¨­å®</option>' + sensors.map(s => '<option value="' + s.deviceId + '"' + (deviceMap[room] === s.deviceId ? ' selected' : '') + '>' + s.deviceName + '</option>').join('') + '</select></div>').join('');
+  rows.innerHTML = allRooms.map(room => '<div class="assign-row"><div class="assign-room">' + room + '</div><select class="assign-select" id="assign-' + room + '"><option value="">未設定</option>' + sensors.map(s => '<option value="' + s.deviceId + '"' + (deviceMap[room] === s.deviceId ? ' selected' : '') + '>' + s.deviceName + '</option>').join('') + '</select></div>').join('');
 }
 
 async function connectApi() {
   const t = document.getElementById('inputToken').value.trim();
   const s = document.getElementById('inputSecret').value.trim();
-  if (!t || !s) { alert('ãã¼ã¯ã³ã¨ã·ã¼ã¯ã¬ãããå¥åãã¦ãã ãã'); return; }
+  if (!t || !s) { alert('トークンとシークレットを入力してください'); return; }
   token = t; secret = s;
   localStorage.setItem('sb_token', token); localStorage.setItem('sb_secret', secret);
-  document.getElementById('connectBtn').textContent = 'æ¥ç¶ä¸­...';
+  document.getElementById('connectBtn').textContent = '接続中...';
   document.getElementById('connectBtn').disabled = true;
   try {
     const res = await fetch(PROXY + '/switchbot/devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, secret }) });
     const data = await res.json();
     if (data.statusCode === 100) {
       devices = data.body.deviceList || [];
-      setStatus('connected', devices.length + 'å°ã®ããã¤ã¹ãæ¤åº');
+      setStatus('connected', devices.length + '台のデバイスを検出');
       renderAssignSection();
-      document.getElementById('connectBtn').textContent = 'å²ãå½ã¦ãä¿å­';
+      document.getElementById('connectBtn').textContent = '割り当てを保存';
       document.getElementById('connectBtn').onclick = saveAssignment;
-    } else { alert('APIèªè¨¼ã«å¤±æãã¾ããã'); }
-  } catch (e) { alert('æ¥ç¶ã«å¤±æãã¾ãã: ' + e.message); }
+    } else { alert('API認証に失敗しました。'); }
+  } catch (e) { alert('接続に失敗しました: ' + e.message); }
   document.getElementById('connectBtn').disabled = false;
 }
 
@@ -589,11 +589,11 @@ function saveAssignment() {
   fetch(PROXY + '/shared/device-map', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({deviceMap})
-  }).catch(e => console.warn('å±æä¿å­å¤±æ:', e));
+  }).catch(e => console.warn('共有保存失敗:', e));
   closeSettings(); refreshAll();
 }
 
-function showLoading(text) { document.getElementById('loadingText').textContent = text || 'èª­ã¿è¾¼ã¿ä¸­...'; document.getElementById('loadingOverlay').style.display = 'flex'; }
+function showLoading(text) { document.getElementById('loadingText').textContent = text || '読み込み中...'; document.getElementById('loadingOverlay').style.display = 'flex'; }
 function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
 function setStatus(type, text) {
   document.getElementById('statusDot').className = 'status-dot ' + type;
